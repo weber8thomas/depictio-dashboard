@@ -85,18 +85,30 @@ AVAILABLE_PLOT_TYPES = {
             # "title": "Population by Continent",
         },
     },
-    # "countries-card": {
-    #     "type": "Card",
-    #     "description": "Card description",
-    #     "property": "Property X",
-    #     "material-icons": "score",
-    #     "function": dbc.Card,
-    #     "kwargs": {
-    #         "legend": "Countries number",
-    #         "column": "country",
-    #         "operation": lambda col: col.nunique(),
-    #     },
-    # },
+    "countries-card": {
+        "type": "Card",
+        "description": "Countries number",
+        "property": "Property X",
+        "material-icons": "score",
+        "function": dbc.Card,
+        "kwargs": {
+            "legend": "Countries number",
+            "column": "country",
+            "operation": lambda col: col.nunique(),
+        },
+    },
+    "global-lifeexp-card": {
+        "type": "Card",
+        "description": "Average life expectancy",
+        "property": "Property X",
+        "material-icons": "score",
+        "function": dbc.Card,
+        "kwargs": {
+            "legend": "Average life expectancy",
+            "column": "lifeExp",
+            "operation": lambda col: round(col.mean(), 2),
+        },
+    },
 }
 
 
@@ -118,7 +130,7 @@ def process_data_for_card(df, column, operation):
     return value
 
 
-def create_initial_figure(selected_year, plot_type):
+def create_initial_figure(df, selected_year, plot_type):
     filtered_df = df[df.year == selected_year]
     # filtered_df = df
     print(plot_type)

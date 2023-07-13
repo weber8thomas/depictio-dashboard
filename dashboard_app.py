@@ -20,7 +20,7 @@ from utils import (
 )
 from config import external_stylesheets
 
-AVAILABLE_PLOT_TYPES = dict(sorted(AVAILABLE_PLOT_TYPES.items()))
+# AVAILABLE_PLOT_TYPES = dict(sorted(AVAILABLE_PLOT_TYPES.items()))
 
 
 app = dash.Dash(
@@ -132,7 +132,7 @@ backend_components = html.Div(
     [
         dcc.Interval(
             id="save-slider-value-interval",
-            interval=2000,  # Save slider value every 1 second
+            interval=10000,  # Save slider value every 1 second
             n_intervals=0,
         ),
         dcc.Store(id="stored-year", storage_type="session", data=init_year),
@@ -391,16 +391,21 @@ def update_draggable_children(
         new_plot_id = f"graph-{n_clicks}-{plot_type.lower().replace(' ', '-')}"
         new_plot_type = plot_type
 
-        new_plot = dcc.Graph(
-            id=new_plot_id,
-            figure=create_initial_figure(selected_year, new_plot_type),
-            responsive=True,
-            style={
-                "width": "100%",
-                "height": "100%",
-            },
-            # config={"staticPlot": False, "editable": True},
-        )
+        if "-card" not in new_plot_type:
+            new_plot = dcc.Graph(
+                id=new_plot_id,
+                figure=create_initial_figure(df, selected_year, new_plot_type),
+                responsive=True,
+                style={
+                    "width": "100%",
+                    "height": "100%",
+                },
+                # config={"staticPlot": False, "editable": True},
+            )
+        else:
+            new_plot = html.Div(
+                create_initial_figure(df, selected_year, new_plot_type), id=new_plot_id
+            )
         # print(new_plot)
 
         new_draggable_child = html.Div(
@@ -420,13 +425,22 @@ def update_draggable_children(
         updated_draggable_children = current_draggable_children + [new_draggable_child]
 
         # Define the default size and position for the new plot
-        new_layout_item = {
-            "i": f"draggable-{new_plot_id}",
-            "x": 10 * ((len(updated_draggable_children) + 1) % 2),
-            "y": n_clicks * 10,
-            "w": 6,
-            "h": 14,
-        }
+        if "-card" not in new_plot_type:
+            new_layout_item = {
+                "i": f"draggable-{new_plot_id}",
+                "x": 10 * ((len(updated_draggable_children) + 1) % 2),
+                "y": n_clicks * 10,
+                "w": 6,
+                "h": 14,
+            }
+        else:
+            new_layout_item = {
+                "i": f"draggable-{new_plot_id}",
+                "x": 10 * ((len(updated_draggable_children) + 1) % 2),
+                "y": n_clicks * 10,
+                "w": 4,
+                "h": 5,
+            }
 
         # Update the layouts property for both 'lg' and 'sm' sizes
         updated_layouts = {}
@@ -451,14 +465,24 @@ def update_draggable_children(
         updated_draggable_children = []
 
         for child in current_draggable_children:
+            print("\n")
+            print(child)
             # try:
             graph = child["props"]["children"][1]
+            # print(graph)
             # Extract the figure type and its corresponding function
             figure_type = "-".join(graph["props"]["id"].split("-")[2:])
+            # print(figure_type)
+            print("\n")
             graph_id = graph["props"]["id"]
-            updated_fig = create_initial_figure(selected_year, figure_type)
+            print(graph_id)
+            updated_fig = create_initial_figure(df, selected_year, figure_type)
             # stored_figures[graph_id] = updated_fig
-            graph["props"]["figure"] = updated_fig
+            if "-card" not in graph_id:
+                graph["props"]["figure"] = updated_fig
+            else:
+                graph["props"]["children"] = updated_fig
+
             updated_child = html.Div(
                 [
                     dbc.Button(
@@ -555,17 +579,6 @@ def update_draggable_children(
     # Add an else condition to return the current layout when there's no triggering input
     else:
         raise dash.exceptions.PreventUpdate
-
-    # Remove the initial call prevention from the clientside_callback
-    # app.clientside_callback(
-    #     "dash_draggable.update_layout",
-    #     Output("draggable", "layouts"),
-    #     [
-    #         Input(f"add-plot-button-{plot_type.lower().replace(' ', '-')}", "n_clicks")
-    #         for plot_type in AVAILABLE_PLOT_TYPES.keys()
-    #     ],
-    # )
-
 
 if __name__ == "__main__":
     app.run_server(debug=True, port="8052")
