@@ -26,7 +26,7 @@ from config import external_stylesheets
 app = dash.Dash(
     __name__,
     external_stylesheets=external_stylesheets,
-    # suppress_callback_exceptions=True,
+    suppress_callback_exceptions=True,
 )
 
 
@@ -132,10 +132,10 @@ backend_components = html.Div(
     [
         dcc.Interval(
             id="save-slider-value-interval",
-            interval=10000,  # Save slider value every 1 second
+            interval=2000,  # Save slider value every 1 second
             n_intervals=0,
         ),
-        dcc.Store(id="stored-year", storage_type="session", data=init_year),
+        # dcc.Store(id="stored-year", storage_type="session", data=init_year),
         dcc.Store(id="stored-children", storage_type="session", data=init_children),
         dcc.Store(id="stored-layout", storage_type="session", data=init_layout),
     ]
@@ -223,15 +223,15 @@ app.layout = dbc.Container(
     [
         top_row,
         backend_components,
-        dcc.Slider(
-            id="year-slider",
-            min=df["year"].min(),
-            max=df["year"].max(),
-            value=init_year,
-            marks={str(year): str(year) for year in df["year"].unique()},
-            step=None,
-            included=True,
-        ),
+        # dcc.Slider(
+        #     id="year-slider",
+        #     min=df["year"].min(),
+        #     max=df["year"].max(),
+        #     value=init_year,
+        #     marks={str(year): str(year) for year in df["year"].unique()},
+        #     step=None,
+        #     included=True,
+        # ),
         dash_draggable.ResponsiveGridLayout(
             id="draggable",
             clearSavedLayout=True,
@@ -244,83 +244,26 @@ app.layout = dbc.Container(
 )
 
 
-@app.callback(
-    Output("save-button-dashboard", "n_clicks"),
-    Input("save-button-dashboard", "n_clicks"),
-    State("stored-layout", "data"),
-    State("stored-children", "data"),
-    State("stored-year", "data"),
-)
-def save_data_dashboard(
-    n_clicks,
-    stored_layout_data,
-    stored_children_data,
-    stored_year_data,
-):
-    # print(dash.callback_context.triggered[0]["prop_id"].split(".")[0], n_clicks)
-    if n_clicks > 0:
-        data = {
-            "stored_layout_data": stored_layout_data,
-            "stored_children_data": stored_children_data,
-            "stored_year_data": stored_year_data,
-        }
-        with open("data.json", "w") as file:
-            json.dump(data, file)
-        return n_clicks
-    return n_clicks
+# @app.callback(
+#     Output("stored-year", "data"),
+#     Input("save-slider-value-interval", "n_intervals"),
+#     State("year-slider", "value"),
+# )
+# def save_slider_value(n_intervals, value):
+#     if n_intervals == 0:
+#         raise dash.exceptions.PreventUpdate
+#     return value
 
 
-@app.callback(
-    Output("success-modal-dashboard", "is_open"),
-    [
-        Input("save-button-dashboard", "n_clicks"),
-        Input("success-modal-close", "n_clicks"),
-    ],
-    [State("success-modal-dashboard", "is_open")],
-)
-def toggle_success_modal_dashboard(n_save, n_close, is_open):
-    ctx = dash.callback_context
+# @app.callback(
+#     Output("year-slider", "value"),
+#     Input("stored-year", "data"),
+# )
+# def update_slider_value(data):
+#     if data is None:
+#         raise dash.exceptions.PreventUpdate
 
-    if not ctx.triggered:
-        raise dash.exceptions.PreventUpdate
-
-    trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
-    # print(trigger_id, n_save, n_close)
-
-    if trigger_id == "save-button-dashboard":
-        if n_save is None or n_save == 0:
-            raise dash.exceptions.PreventUpdate
-        else:
-            return True
-
-    elif trigger_id == "success-modal-close":
-        if n_close is None or n_close == 0:
-            raise dash.exceptions.PreventUpdate
-        else:
-            return False
-
-    return is_open
-
-
-@app.callback(
-    Output("stored-year", "data"),
-    Input("save-slider-value-interval", "n_intervals"),
-    State("year-slider", "value"),
-)
-def save_slider_value(n_intervals, value):
-    if n_intervals == 0:
-        raise dash.exceptions.PreventUpdate
-    return value
-
-
-@app.callback(
-    Output("year-slider", "value"),
-    Input("stored-year", "data"),
-)
-def update_slider_value(data):
-    if data is None:
-        raise dash.exceptions.PreventUpdate
-    return data
+#     return data
 
 
 # define the callback to show/hide the modal
@@ -347,11 +290,12 @@ def toggle_modal_dashboard(n1, n2, is_open):
         for plot_type in AVAILABLE_PLOT_TYPES.keys()
     ]
     + [
+        Input({"type": "remove-button", "index": dash.dependencies.ALL}, "n_clicks"),
+        # Input({"type": "slider", "index": dash.dependencies.ALL}, "n_clicks"),
+        Input({"type": "slider", "index": dash.dependencies.ALL}, "value"),
         Input("stored-layout", "data"),
         Input("stored-children", "data"),
         Input("draggable", "layouts"),
-        Input({"type": "remove-button", "index": dash.dependencies.ALL}, "n_clicks"),
-        Input("year-slider", "value"),
     ],
     [
         State("draggable", "children"),
@@ -364,19 +308,29 @@ def update_draggable_children(
     # n_clicks, selected_year, current_draggable_children, current_layouts, stored_figures
     *args,
 ):
+    for arg in [*args[:-7]]:
+        print("\n")
+        print(arg)
+    print("______________________")
+
     ctx = dash.callback_context
     triggered_input = ctx.triggered[0]["prop_id"].split(".")[0]
-    # print(triggered_input)
+    print(triggered_input)
     # print(ctx.triggered)
-    stored_layout_data = args[-9]
-    stored_children_data = args[-8]
-    new_layouts = args[-7]
+    stored_layout_data = args[-7]
+    stored_children_data = args[-6]
+    new_layouts = args[-5]
     # remove-button -6
-    selected_year = args[-5]
+    # selected_year = args[-5]
+    selected_year = init_year
     current_draggable_children = args[-4]
     current_layouts = args[-3]
     stored_layout = args[-2]
     stored_figures = args[-1]
+    slider_value = ctx.triggered[0]["value"] if "-slider" in triggered_input else None
+    print(f"Slider value: {slider_value}")
+    print(ctx.triggered)
+
 
     # if current_draggable_children is None:
     #     current_draggable_children = []
@@ -387,11 +341,20 @@ def update_draggable_children(
         plot_type = triggered_input.replace("add-plot-button-", "")
 
         n_clicks = ctx.triggered[0]["value"]
+        print(n_clicks)
 
         new_plot_id = f"graph-{n_clicks}-{plot_type.lower().replace(' ', '-')}"
         new_plot_type = plot_type
 
-        if "-card" not in new_plot_type:
+        if "-card" in new_plot_type:
+            new_plot = html.Div(
+                create_initial_figure(df, selected_year, new_plot_type), id=new_plot_id
+            )
+        elif "-slider" in new_plot_type:
+            new_plot = create_initial_figure(
+                df, selected_year, new_plot_type, f"{new_plot_id}"
+            )
+        else:
             new_plot = dcc.Graph(
                 id=new_plot_id,
                 figure=create_initial_figure(df, selected_year, new_plot_type),
@@ -401,10 +364,6 @@ def update_draggable_children(
                     "height": "100%",
                 },
                 # config={"staticPlot": False, "editable": True},
-            )
-        else:
-            new_plot = html.Div(
-                create_initial_figure(df, selected_year, new_plot_type), id=new_plot_id
             )
         # print(new_plot)
 
@@ -461,46 +420,49 @@ def update_draggable_children(
             # selected_year,
         )
 
-    elif triggered_input == "year-slider":
+    elif "-slider" in triggered_input:
+        print(triggered_input)
+        slider_id = ast.literal_eval(triggered_input)["index"]
+        slider_value = ctx.triggered[0]["value"]
+        print(f"Slider value: {slider_value}")
+        print(ctx.triggered)
+
         updated_draggable_children = []
 
         for child in current_draggable_children:
-            print("\n")
-            print(child)
-            # try:
-            graph = child["props"]["children"][1]
-            # print(graph)
-            # Extract the figure type and its corresponding function
-            figure_type = "-".join(graph["props"]["id"].split("-")[2:])
-            # print(figure_type)
-            print("\n")
-            graph_id = graph["props"]["id"]
-            print(graph_id)
-            updated_fig = create_initial_figure(df, selected_year, figure_type)
-            # stored_figures[graph_id] = updated_fig
-            if "-card" not in graph_id:
-                graph["props"]["figure"] = updated_fig
+            if child["props"]["id"] == slider_id:
+                graph = child["props"]["children"][1]
+                graph_id = graph["props"]["id"]
+                if "slider" not in graph_id:
+                    figure_type = "-".join(graph["props"]["id"].split("-")[2:])
+
+                    updated_fig = create_initial_figure(
+                        df, slider_value, figure_type
+                    )  # Use the slider's value instead of selected_year
+
+                    if "-card" not in graph_id:
+                        graph["props"]["figure"] = updated_fig
+                    else:
+                        graph["props"]["children"] = updated_fig
+
+                    updated_child = html.Div(
+                        [
+                            dbc.Button(
+                                "Remove",
+                                id={
+                                    "type": "remove-button",
+                                    "index": child["props"]["id"],
+                                },
+                                color="danger",
+                            ),
+                            graph,
+                        ],
+                        id=child["props"]["id"],
+                    )
+
+                    updated_draggable_children.append(updated_child)
             else:
-                graph["props"]["children"] = updated_fig
-
-            updated_child = html.Div(
-                [
-                    dbc.Button(
-                        "Remove",
-                        id={"type": "remove-button", "index": child["props"]["id"]},
-                        color="danger",
-                    ),
-                    graph,
-                ],
-                id=child["props"]["id"],
-            )
-
-            updated_draggable_children.append(updated_child)
-            # except:
-            #     # If any exception occurs, just append the current child without modifications
-            #     updated_draggable_children.append(child)
-
-        # return updated_draggable_children, current_layouts, stored_figures
+                updated_draggable_children.append(child)
 
         return (
             updated_draggable_children,
@@ -579,6 +541,65 @@ def update_draggable_children(
     # Add an else condition to return the current layout when there's no triggering input
     else:
         raise dash.exceptions.PreventUpdate
+
+
+@app.callback(
+    Output("save-button-dashboard", "n_clicks"),
+    Input("save-button-dashboard", "n_clicks"),
+    State("stored-layout", "data"),
+    State("stored-children", "data"),
+    # State("stored-year", "data"),
+)
+def save_data_dashboard(
+    n_clicks,
+    stored_layout_data,
+    stored_children_data,
+    # stored_year_data,
+):
+    # print(dash.callback_context.triggered[0]["prop_id"].split(".")[0], n_clicks)
+    if n_clicks > 0:
+        data = {
+            "stored_layout_data": stored_layout_data,
+            "stored_children_data": stored_children_data,
+            # "stored_year_data": stored_year_data,
+        }
+        with open("data.json", "w") as file:
+            json.dump(data, file)
+        return n_clicks
+    return n_clicks
+
+
+@app.callback(
+    Output("success-modal-dashboard", "is_open"),
+    [
+        Input("save-button-dashboard", "n_clicks"),
+        Input("success-modal-close", "n_clicks"),
+    ],
+    [State("success-modal-dashboard", "is_open")],
+)
+def toggle_success_modal_dashboard(n_save, n_close, is_open):
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+        raise dash.exceptions.PreventUpdate
+
+    trigger_id = ctx.triggered[0]["prop_id"].split(".")[0]
+    # print(trigger_id, n_save, n_close)
+
+    if trigger_id == "save-button-dashboard":
+        if n_save is None or n_save == 0:
+            raise dash.exceptions.PreventUpdate
+        else:
+            return True
+
+    elif trigger_id == "success-modal-close":
+        if n_close is None or n_close == 0:
+            raise dash.exceptions.PreventUpdate
+        else:
+            return False
+
+    return is_open
+
 
 if __name__ == "__main__":
     app.run_server(debug=True, port="8052")

@@ -4,7 +4,6 @@ import os, json
 import dash_bootstrap_components as dbc
 
 
-
 AVAILABLE_PLOT_TYPES = {
     "scatter-plot": {
         "type": "Scatter plot",
@@ -109,8 +108,24 @@ AVAILABLE_PLOT_TYPES = {
             "operation": lambda col: round(col.mean(), 2),
         },
     },
+    "time-slider": {
+        "type": "Slider",
+        "description": "Year slider",
+        "property": "Property Z",
+        "material-icons": "tune",
+        "function": dcc.Slider,
+        "kwargs": {
+            "legend": "Average life expectancy",
+            "column": "year",
+            # "operation": lambda col: round(col.mean(), 2),
+            # "min": df["year"].min(),
+            # "max": df["year"].max(),
+            # "value": init_year,
+            # "step": None,
+            # "included": True,
+        },
+    },
 }
-
 
 
 # Add a new function to create a card with a number and a legend
@@ -125,27 +140,52 @@ def create_card(value, legend):
     )
 
 
+def create_slider(value, df, dict_data, slider_id):
+    # print(dict_data)
+    col = dict_data["column"]
+    # print(col)
+    # print(df)
+    return dcc.Slider(
+        id={"type": "slider", "id":slider_id},
+        min=df[f"{col}"].min(),
+        max=df[f"{col}"].max(),
+        value=value,
+        marks={str(elem): str(elem) for elem in df[f"{col}"].unique()},
+        step=None,
+        included=True,
+    )
+
+
 def process_data_for_card(df, column, operation):
     value = operation(df[column])
     return value
 
 
-def create_initial_figure(df, selected_year, plot_type):
+def create_initial_figure(df, selected_year, plot_type, id=None):
+    # print("TOTO")
+    # print(selected_year)
     filtered_df = df[df.year == selected_year]
     # filtered_df = df
-    print(plot_type)
+    # print(plot_type)
     if AVAILABLE_PLOT_TYPES[plot_type]["type"] is "Card":
         value = process_data_for_card(
             filtered_df,
             AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]["column"],
             AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]["operation"],
         )
-        print(value)
+        # print(value)
         fig = create_card(
-            value,
+            selected_year,
             AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]["legend"],
         )
-    elif AVAILABLE_PLOT_TYPES[plot_type]["type"] is not "Card":
+    elif AVAILABLE_PLOT_TYPES[plot_type]["type"] is "Slider":
+        fig = create_slider(
+            selected_year,
+            df,
+            AVAILABLE_PLOT_TYPES[plot_type]["kwargs"],
+            id
+        )
+    else:
         fig = AVAILABLE_PLOT_TYPES[plot_type]["function"](
             filtered_df, **AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]
         )
