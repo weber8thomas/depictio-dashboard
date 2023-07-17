@@ -396,18 +396,17 @@ def update_draggable_children(
 
         if "-card" in new_plot_type:
             new_plot = html.Div(
-                create_initial_figure(df, selected_year, new_plot_type), id=new_plot_id
+                create_initial_figure(df, new_plot_type), id=new_plot_id
             )
         elif "-input" in new_plot_type:
             print(new_plot_id)
             # input_id = f"{plot_type.lower().replace(' ', '-')}"
-            new_plot = create_initial_figure(
-                df, selected_year, new_plot_type, new_plot_id
-            )
+
+            new_plot = create_initial_figure(df, new_plot_type, id=new_plot_id)
         else:
             new_plot = dcc.Graph(
                 id=new_plot_id,
-                figure=create_initial_figure(df, selected_year, new_plot_type),
+                figure=create_initial_figure(df, new_plot_type),
                 responsive=True,
                 style={
                     "width": "100%",
@@ -482,7 +481,7 @@ def update_draggable_children(
             # selected_year,
         )
 
-    elif "-input" in triggered_input and 'remove-' not in triggered_input:
+    elif "-input" in triggered_input and "remove-" not in triggered_input:
         input_id = ast.literal_eval(triggered_input)["index"]
         input_value = ctx.triggered[0]["value"]
 
@@ -499,7 +498,10 @@ def update_draggable_children(
                     # Extract the figure type and its corresponding function
                     figure_type = "-".join(graph["props"]["id"].split("-")[2:])
                     graph_id = graph["props"]["id"]
-                    updated_fig = create_initial_figure(df, input_value, figure_type)
+                    filter_value = value
+                    updated_fig = create_initial_figure(
+                        df, figure_type, filter=filter_dict
+                    )
 
                     if "-card" in graph_id:
                         graph["props"]["children"] = updated_fig
@@ -562,7 +564,9 @@ def update_draggable_children(
             print(child)
             # print("\n")
             print(child["props"]["id"], button_uuid)
-            if "-".join(child["props"]["id"].split('-')[1:]) == "-".join(button_uuid.split('-')[1:]):
+            if "-".join(child["props"]["id"].split("-")[1:]) == "-".join(
+                button_uuid.split("-")[1:]
+            ):
                 print(child["props"]["id"])
                 print(current_draggable_children)
                 print(len(current_draggable_children))
@@ -575,7 +579,7 @@ def update_draggable_children(
             current_draggable_children,
             # selected_year,
         )
-    
+
     elif triggered_input == "stored-layout" or triggered_input == "stored-children":
         if stored_layout_data and stored_children_data:
             return (
