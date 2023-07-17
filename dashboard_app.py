@@ -1,8 +1,10 @@
 import dash
 
 # from dash.dependencies import Input, Output, State
-from dash import html, dcc, Input, Output, State
+from dash import html, dcc, Input, Output, State, ALL, MATCH
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
+from dash_iconify import DashIconify
 import pandas as pd
 import dash_draggable
 from dash import dash_table
@@ -115,6 +117,23 @@ buttons = dbc.Col(
             size="lg",
             n_clicks=0,
         ),
+        dbc.Checklist(
+            id="edit-dashboard-mode-button",
+            # color="secondary",
+            style={"margin-left": "20px", "font-size": "22px"},
+            # size="lg",
+            # n_clicks=0,
+            options=[
+                {"label": "Edit dashboard", "value": 0},
+            ],
+            value=[0],
+            switch=True,
+        ),
+        # dmc.Switch(
+        #     offLabel=DashIconify(icon="basil:edit-outline", width=20),
+        #     onLabel=DashIconify(icon="basil:edit-solid", width=20),
+        #     size="lg",
+        # ),
     ],
     className="d-flex justify-content-center align-items-center",
 )
@@ -130,14 +149,16 @@ top_row = dbc.Row(
 
 backend_components = html.Div(
     [
-        dcc.Interval(
-            id="save-slider-value-interval",
-            interval=2000,  # Save slider value every 1 second
-            n_intervals=0,
-        ),
+        # dcc.Interval(
+        #     id="save-input-value-interval",
+        #     interval=2000,  # Save input value every 1 second
+        #     n_intervals=0,
+        # ),
         # dcc.Store(id="stored-year", storage_type="session", data=init_year),
-        dcc.Store(id="stored-children", storage_type="session", data=init_children),
-        dcc.Store(id="stored-layout", storage_type="session", data=init_layout),
+        # dcc.Store(id="stored-children", storage_type="session", data=init_children),
+        # dcc.Store(id="stored-layout", storage_type="session", data=init_layout),
+        dcc.Store(id="stored-children", storage_type="session"),
+        dcc.Store(id="stored-layout", storage_type="session"),
     ]
 )
 
@@ -222,9 +243,11 @@ modal = dbc.Modal(
 app.layout = dbc.Container(
     [
         top_row,
+        # html.Div(id="year-input"),  # Added to display the selected value
+        html.Div(id="year-input2"),  # Added to display the selected value
         backend_components,
-        # dcc.Slider(
-        #     id="year-slider",
+        # dcc.input(
+        #     id="year-input",
         #     min=df["year"].min(),
         #     max=df["year"].max(),
         #     value=init_year,
@@ -246,20 +269,20 @@ app.layout = dbc.Container(
 
 # @app.callback(
 #     Output("stored-year", "data"),
-#     Input("save-slider-value-interval", "n_intervals"),
-#     State("year-slider", "value"),
+#     Input("save-input-value-interval", "n_intervals"),
+#     State("year-input", "value"),
 # )
-# def save_slider_value(n_intervals, value):
+# def save_input_value(n_intervals, value):
 #     if n_intervals == 0:
 #         raise dash.exceptions.PreventUpdate
 #     return value
 
 
 # @app.callback(
-#     Output("year-slider", "value"),
+#     Output("year-input", "value"),
 #     Input("stored-year", "data"),
 # )
-# def update_slider_value(data):
+# def update_input_value(data):
 #     if data is None:
 #         raise dash.exceptions.PreventUpdate
 
@@ -278,6 +301,24 @@ def toggle_modal_dashboard(n1, n2, is_open):
     return is_open
 
 
+# @app.callback(
+#     Output("year-input", "children"),
+#     # Input({"type": "input", "index": dash.dependencies.ALL}, "value"),
+#     Input("time-input", "value"),
+# )
+# def display_selected_value(value):
+#     return html.Div("Selected year: {}".format(value))
+
+
+@app.callback(
+    Output("year-input2", "children"),
+    Input({"type": "input-component", "index": ALL}, "value"),
+    # Input("time-input", "value"),
+)
+def display_selected_value(value):
+    return html.Div("Selected year: {}".format(value))
+
+
 @app.callback(
     [
         Output("draggable", "children"),
@@ -290,9 +331,10 @@ def toggle_modal_dashboard(n1, n2, is_open):
         for plot_type in AVAILABLE_PLOT_TYPES.keys()
     ]
     + [
+        Input("edit-dashboard-mode-button", "value"),
         Input({"type": "remove-button", "index": dash.dependencies.ALL}, "n_clicks"),
-        # Input({"type": "slider", "index": dash.dependencies.ALL}, "n_clicks"),
-        Input({"type": "slider", "index": dash.dependencies.ALL}, "value"),
+        Input({"type": "input-component", "index": dash.dependencies.ALL}, "value"),
+        # Input("time-input", "value"),
         Input("stored-layout", "data"),
         Input("stored-children", "data"),
         Input("draggable", "layouts"),
@@ -303,34 +345,39 @@ def toggle_modal_dashboard(n1, n2, is_open):
         State("stored-layout", "data"),
         State("stored-children", "data"),
     ],
+    # prevent_initial_call=True,
 )
 def update_draggable_children(
     # n_clicks, selected_year, current_draggable_children, current_layouts, stored_figures
     *args,
 ):
-    for arg in [*args[:-7]]:
-        print("\n")
-        print(arg)
-    print("______________________")
+    # for arg in [*args]:
+    #     print("\n")
+    #     print(arg)
+    # print("______________________")
 
     ctx = dash.callback_context
     triggered_input = ctx.triggered[0]["prop_id"].split(".")[0]
     print(triggered_input)
-    # print(ctx.triggered)
+    print(ctx.triggered)
+    print("\n")
     stored_layout_data = args[-7]
     stored_children_data = args[-6]
     new_layouts = args[-5]
+    # print(args[-10])
+    switch_state = True if len(args[-10]) > 0 else False
+    # print(f"Switch state: {switch_state}")
+
     # remove-button -6
     # selected_year = args[-5]
+
+    # TODO: fix this
     selected_year = init_year
+
     current_draggable_children = args[-4]
     current_layouts = args[-3]
     stored_layout = args[-2]
     stored_figures = args[-1]
-    slider_value = ctx.triggered[0]["value"] if "-slider" in triggered_input else None
-    print(f"Slider value: {slider_value}")
-    print(ctx.triggered)
-
 
     # if current_draggable_children is None:
     #     current_draggable_children = []
@@ -345,14 +392,17 @@ def update_draggable_children(
 
         new_plot_id = f"graph-{n_clicks}-{plot_type.lower().replace(' ', '-')}"
         new_plot_type = plot_type
+        print(new_plot_type)
 
         if "-card" in new_plot_type:
             new_plot = html.Div(
                 create_initial_figure(df, selected_year, new_plot_type), id=new_plot_id
             )
-        elif "-slider" in new_plot_type:
+        elif "-input" in new_plot_type:
+            print(new_plot_id)
+            # input_id = f"{plot_type.lower().replace(' ', '-')}"
             new_plot = create_initial_figure(
-                df, selected_year, new_plot_type, f"{new_plot_id}"
+                df, selected_year, new_plot_type, new_plot_id
             )
         else:
             new_plot = dcc.Graph(
@@ -367,13 +417,25 @@ def update_draggable_children(
             )
         # print(new_plot)
 
+        # new_draggable_child = new_plot
+        edit_button = dbc.Button(
+            "Edit",
+            id={
+                "type": "edit-button",
+                "index": f"edit-{new_plot_id}",
+            },
+            color="secondary",
+            style={"margin-left": "10px"},
+            # size="lg",
+        )
         new_draggable_child = html.Div(
             [
                 dbc.Button(
                     "Remove",
-                    id={"type": "remove-button", "index": new_plot_id},
+                    id={"type": "remove-button", "index": f"remove-{new_plot_id}"},
                     color="danger",
                 ),
+                edit_button,
                 new_plot,
             ],
             id=f"draggable-{new_plot_id}",
@@ -420,63 +482,69 @@ def update_draggable_children(
             # selected_year,
         )
 
-    elif "-slider" in triggered_input:
-        print(triggered_input)
-        slider_id = ast.literal_eval(triggered_input)["index"]
-        slider_value = ctx.triggered[0]["value"]
-        print(f"Slider value: {slider_value}")
-        print(ctx.triggered)
+    elif "-input" in triggered_input and 'remove-' not in triggered_input:
+        input_id = ast.literal_eval(triggered_input)["index"]
+        input_value = ctx.triggered[0]["value"]
 
         updated_draggable_children = []
 
         for child in current_draggable_children:
-            if child["props"]["id"] == slider_id:
-                graph = child["props"]["children"][1]
-                graph_id = graph["props"]["id"]
-                if "slider" not in graph_id:
+            if child["props"]["id"].replace("draggable-", "") == input_id:
+                updated_draggable_children.append(child)
+            elif child["props"]["id"].replace("draggable-", "") != input_id:
+                # print(child["props"]["id"]["index"])
+                index = -1 if switch_state is True else 0
+                graph = child["props"]["children"][index]
+                if type(graph["props"]["id"]) is str:
+                    # Extract the figure type and its corresponding function
                     figure_type = "-".join(graph["props"]["id"].split("-")[2:])
+                    graph_id = graph["props"]["id"]
+                    updated_fig = create_initial_figure(df, input_value, figure_type)
 
-                    updated_fig = create_initial_figure(
-                        df, slider_value, figure_type
-                    )  # Use the slider's value instead of selected_year
-
-                    if "-card" not in graph_id:
-                        graph["props"]["figure"] = updated_fig
-                    else:
+                    if "-card" in graph_id:
                         graph["props"]["children"] = updated_fig
 
+                    else:
+                        graph["props"]["figure"] = updated_fig
+                    rm_button = dbc.Button(
+                        "Remove",
+                        id={
+                            "type": "remove-button",
+                            "index": child["props"]["id"],
+                        },
+                        color="danger",
+                    )
+                    edit_button = dbc.Button(
+                        "Edit",
+                        id={
+                            "type": "edit-button",
+                            "index": child["props"]["id"],
+                        },
+                        color="secondary",
+                        style={"margin-left": "10px"},
+                    )
+                    children = (
+                        [rm_button, edit_button, graph]
+                        if switch_state is True
+                        else [graph]
+                    )
                     updated_child = html.Div(
-                        [
-                            dbc.Button(
-                                "Remove",
-                                id={
-                                    "type": "remove-button",
-                                    "index": child["props"]["id"],
-                                },
-                                color="danger",
-                            ),
-                            graph,
-                        ],
+                        children=children,
                         id=child["props"]["id"],
                     )
 
                     updated_draggable_children.append(updated_child)
-            else:
-                updated_draggable_children.append(child)
-
         return (
             updated_draggable_children,
             current_layouts,
-            # selected_year,
             current_layouts,
             updated_draggable_children,
-            # selected_year,
         )
 
     # if the remove button was clicked, return an empty list to remove all the plots
 
-    elif "remove-button" in triggered_input:
-        # print(triggered_input)
+    elif "remove-" in triggered_input:
+        print(triggered_input, type(triggered_input))
         # extract the UUID from the button_id
         # try:
 
@@ -488,11 +556,16 @@ def update_draggable_children(
         # print("\n")
         # print(button_uuid)
 
+        print(current_draggable_children)
         # find the child div with the corresponding id
         for child in current_draggable_children:
-            # print(child)
+            print(child)
             # print("\n")
-            if child["props"]["id"] == button_uuid:
+            print(child["props"]["id"], button_uuid)
+            if "-".join(child["props"]["id"].split('-')[1:]) == "-".join(button_uuid.split('-')[1:]):
+                print(child["props"]["id"])
+                print(current_draggable_children)
+                print(len(current_draggable_children))
                 current_draggable_children.remove(child)
         return (
             current_draggable_children,
@@ -502,6 +575,7 @@ def update_draggable_children(
             current_draggable_children,
             # selected_year,
         )
+    
     elif triggered_input == "stored-layout" or triggered_input == "stored-children":
         if stored_layout_data and stored_children_data:
             return (
@@ -535,6 +609,53 @@ def update_draggable_children(
             # selected_year,
             new_layouts,
             current_draggable_children,
+            # selected_year,
+        )
+    elif triggered_input == "edit-dashboard-mode-button":
+        # switch_state = True if len(ctx.triggered[0]["value"]) > 0 else False
+        print(switch_state)
+        # assuming the switch state is added as the first argument in args
+        updated_draggable_children = []
+
+        for child in current_draggable_children:
+            graph = child["props"]["children"][
+                -1
+            ]  # Assuming graph is always the last child
+            if switch_state:  # If switch is 'on', add the remove button
+                remove_button = dbc.Button(
+                    "Remove",
+                    id={
+                        "type": "remove-button",
+                        "index": child["props"]["id"],
+                    },
+                    color="danger",
+                )
+                edit_button = dbc.Button(
+                    "Edit",
+                    id={
+                        "type": "edit-button",
+                        "index": child["props"]["id"],
+                    },
+                    color="secondary",
+                    style={"margin-left": "10px"},
+                )
+
+                updated_child = html.Div(
+                    [remove_button, edit_button, graph],
+                    id=child["props"]["id"],
+                )
+            else:  # If switch is 'off', remove the button
+                updated_child = html.Div(
+                    [graph],
+                    id=child["props"]["id"],
+                )
+            updated_draggable_children.append(updated_child)
+        return (
+            updated_draggable_children,
+            new_layouts,
+            # selected_year,
+            new_layouts,
+            updated_draggable_children,
             # selected_year,
         )
 

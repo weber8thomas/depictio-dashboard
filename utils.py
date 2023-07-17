@@ -19,6 +19,8 @@ AVAILABLE_PLOT_TYPES = {
             "hover_name": "country",
             "log_x": True,
             "size_max": 55,
+            "title": "Scatter plot of GDP per Capita vs. Life Expectancy",
+
             # "animation_frame": "year",
         },
     },
@@ -108,8 +110,8 @@ AVAILABLE_PLOT_TYPES = {
             "operation": lambda col: round(col.mean(), 2),
         },
     },
-    "time-slider": {
-        "type": "Slider",
+    "time-slider-input": {
+        "type": "Input",
         "description": "Year slider",
         "property": "Property Z",
         "material-icons": "tune",
@@ -140,19 +142,28 @@ def create_card(value, legend):
     )
 
 
-def create_slider(value, df, dict_data, slider_id):
+def create_input_component(value, df, dict_data, input_component_id):
     # print(dict_data)
-    col = dict_data["column"]
+    col = dict_data["kwargs"]["column"]
     # print(col)
     # print(df)
-    return dcc.Slider(
-        id={"type": "slider", "id":slider_id},
-        min=df[f"{col}"].min(),
-        max=df[f"{col}"].max(),
-        value=value,
-        marks={str(elem): str(elem) for elem in df[f"{col}"].unique()},
-        step=None,
-        included=True,
+    ComponentFunction = dict_data.get("function", dcc.Slider)  # Default to dcc.Slider
+
+    return html.Div(
+        children=[
+            html.H5(dict_data["description"]),
+            ComponentFunction(
+                # id=input_component_id,
+                # df[f"{col}"].unique().tolist(),
+                id={"type": "input-component", "index": input_component_id},
+                min=df[f"{col}"].min(),
+                max=df[f"{col}"].max(),
+                value=value,
+                marks={str(elem): str(elem) for elem in df[f"{col}"].unique()},
+                step=None,
+                included=True,
+            ),
+        ]
     )
 
 
@@ -175,16 +186,11 @@ def create_initial_figure(df, selected_year, plot_type, id=None):
         )
         # print(value)
         fig = create_card(
-            selected_year,
+            value,
             AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]["legend"],
         )
-    elif AVAILABLE_PLOT_TYPES[plot_type]["type"] is "Slider":
-        fig = create_slider(
-            selected_year,
-            df,
-            AVAILABLE_PLOT_TYPES[plot_type]["kwargs"],
-            id
-        )
+    elif AVAILABLE_PLOT_TYPES[plot_type]["type"] is "Input":
+        fig = create_input_component(selected_year, df, AVAILABLE_PLOT_TYPES[plot_type], id)
     else:
         fig = AVAILABLE_PLOT_TYPES[plot_type]["function"](
             filtered_df, **AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]
