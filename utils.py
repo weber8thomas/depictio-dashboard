@@ -123,7 +123,7 @@ AVAILABLE_PLOT_TYPES = {
             # "max": df["year"].max(),
             # "value": init_year,
             # "step": None,
-            # "included": True,
+            "included": False,
         },
     },
     "continent-multiselect-input": {
@@ -145,13 +145,13 @@ AVAILABLE_PLOT_TYPES = {
     },
     "lifeexp-slider-input": {
         "type": "Input",
-        "description": "Continent dropdown",
-        "property": "Property I",
+        "description": "LifeExp RangeSlider",
+        "property": "Property J",
         "material-icons": "tune",
-        "function": dcc.Dropdown,
+        "function": dcc.RangeSlider,
         "kwargs": {
-            "column": "continent",
-            "multi": True,
+            "column": "lifeExp",
+            # "multi": True,
             # "operation": lambda col: round(col.mean(), 2),
             # "min": df["year"].min(),
             # "max": df["year"].max(),
@@ -189,7 +189,16 @@ def create_input_component(df, dict_data, input_component_id):
             # value=value,
             marks={str(elem): str(elem) for elem in df[f"{col}"].unique()},
             step=None,
-            included=True,
+            included=False,
+        )
+    elif ComponentFunction is dcc.RangeSlider:
+        kwargs = dict(
+            min=df[f"{col}"].min(),
+            max=df[f"{col}"].max(),
+            # value=value,
+            # marks={str(elem): str(elem) for elem in df[f"{col}"].unique()},
+            # step=None,
+            # included=True,
         )
     elif ComponentFunction is dcc.Dropdown:
         kwargs = dict(
@@ -241,14 +250,23 @@ def create_initial_figure(df, plot_type, input_id=None, filter=dict(), id=None):
         # Apply all active filters
         for input_component_name, filter_value in filter.items():
             column_name = AVAILABLE_PLOT_TYPES[input_component_name]["kwargs"]["column"]
+            function_type = AVAILABLE_PLOT_TYPES[input_component_name]["function"]
             print(column_name, filter_value)
-            if isinstance(filter_value, list):  # check if filter_value is a list
-                if filter_value:
-                    filtered_df = filtered_df[filtered_df[column_name].isin(filter_value)]
+            if function_type is not dcc.RangeSlider:
+                if isinstance(filter_value, list):  # check if filter_value is a list
+                    if filter_value:
+                        filtered_df = filtered_df[
+                            filtered_df[column_name].isin(filter_value)
+                        ]
+                    else:
+                        filtered_df = filtered_df
                 else:
-                    filtered_df = filtered_df
+                    filtered_df = filtered_df[filtered_df[column_name] == filter_value]
             else:
-                filtered_df = filtered_df[filtered_df[column_name] == filter_value]
+                filtered_df = filtered_df[
+                    (filtered_df[column_name] >= filter_value[0])
+                    & (filtered_df[column_name] <= filter_value[1])
+                ]
 
     else:
         filtered_df = df

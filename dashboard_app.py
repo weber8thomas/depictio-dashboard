@@ -366,6 +366,7 @@ def update_draggable_children(
     new_layouts = args[-5]
     # print(args[-10])
     switch_state = True if len(args[-10]) > 0 else False
+    switch_state_index = -1 if switch_state is True else 0
     # print(f"Switch state: {switch_state}")
 
     # remove-button -6
@@ -482,25 +483,67 @@ def update_draggable_children(
         )
 
     elif "-input" in triggered_input and "remove-" not in triggered_input:
+        print("\n")
+        print("INPUT")
         input_id = ast.literal_eval(triggered_input)["index"]
+        print(ctx.triggered)
         input_value = ctx.triggered[0]["value"]
+        print(input_value)
+        print(input_id)
 
         updated_draggable_children = []
+        print(len(current_draggable_children))
+        print("\n")
 
-        for child in current_draggable_children:
+        print(
+            [
+                child["props"]["children"][switch_state_index]["props"]["children"][-1]["props"]["id"]
+                # child["props"]["children"][switch_state_index]["props"]["children"][-1]
+                for child in current_draggable_children
+                if "-input" in child["props"]["id"]
+            ]
+        )
+        print("TEST333")
+        filter_dict = {
+            "-".join(
+                child["props"]["children"][switch_state_index]["props"]["children"][-1][
+                    "props"
+                ]["id"]["index"].split("-")[2:]
+            ): child["props"]["children"][switch_state_index]["props"]["children"][-1][
+                "props"
+            ][
+                "value"
+            ]
+            for j, child in enumerate(current_draggable_children)
+            if "-input" in child["props"]["id"]
+            and "value"
+            in child["props"]["children"][switch_state_index]["props"]["children"][-1][
+                "props"
+            ]
+        }
+        print("\n")
+
+        for j, child in enumerate(current_draggable_children):
+            print(j)
+            print(child["props"]["id"])
+            print("OK_START")
+            print(child["props"])
             if child["props"]["id"].replace("draggable-", "") == input_id:
                 updated_draggable_children.append(child)
-            elif child["props"]["id"].replace("draggable-", "") != input_id:
+            elif child["props"]["id"].replace("draggable-", "") != input_id and "-input" not in child["props"]["id"]:
                 # print(child["props"]["id"]["index"])
                 index = -1 if switch_state is True else 0
                 graph = child["props"]["children"][index]
                 if type(graph["props"]["id"]) is str:
+                    print("TEST")
                     # Extract the figure type and its corresponding function
                     figure_type = "-".join(graph["props"]["id"].split("-")[2:])
                     graph_id = graph["props"]["id"]
-                    filter_value = value
                     updated_fig = create_initial_figure(
-                        df, figure_type, filter=filter_dict
+                        df,
+                        figure_type,
+                        input_id="-".join(input_id.split("-")[2:]),
+                        filter=filter_dict,
                     )
 
                     if "-card" in graph_id:
@@ -536,6 +579,11 @@ def update_draggable_children(
                     )
 
                     updated_draggable_children.append(updated_child)
+            else:
+                updated_draggable_children.append(child)
+
+            print("OK_END")
+
         return (
             updated_draggable_children,
             current_layouts,
