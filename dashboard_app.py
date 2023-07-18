@@ -40,7 +40,7 @@ df = pd.read_csv(
 data = load_data()
 init_layout = data["stored_layout_data"] if data else {}
 init_children = data["stored_children_data"] if data else list()
-init_year = data["stored_year_data"] if data else df["year"].min()
+init_year = df["year"].min()
 
 
 header = dbc.Col(

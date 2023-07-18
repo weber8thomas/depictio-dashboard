@@ -160,6 +160,23 @@ AVAILABLE_PLOT_TYPES = {
             # "included": True,
         },
     },
+    "country-input-input": {
+        "type": "Input",
+        "description": "Country Input",
+        "property": "Property M",
+        "material-icons": "search",
+        "function": dcc.Input,
+        "kwargs": {
+            "column": "country",
+            # "multi": True,
+            # "operation": lambda col: round(col.mean(), 2),
+            # "min": df["year"].min(),
+            # "max": df["year"].max(),
+            # "value": init_year,
+            # "step": None,
+            # "included": True,
+        },
+    },
 }
 
 
@@ -205,6 +222,14 @@ def create_input_component(df, dict_data, input_component_id):
             options=[{"label": i, "value": i} for i in df[f"{col}"].unique().tolist()],
             # value=value,
             multi=True,
+        )
+    elif ComponentFunction is dcc.Input:
+        kwargs = dict(
+            # options=[{"label": i, "value": i} for i in df[f"{col}"].unique().tolist()],
+            type="text",
+            placeholder="Enter a value...",
+            # value=value,
+            debounce=True,
         )
     # kwargs = dict(
     #     min=df[f"{col}"].min(),
@@ -252,21 +277,27 @@ def create_initial_figure(df, plot_type, input_id=None, filter=dict(), id=None):
             column_name = AVAILABLE_PLOT_TYPES[input_component_name]["kwargs"]["column"]
             function_type = AVAILABLE_PLOT_TYPES[input_component_name]["function"]
             print(column_name, filter_value)
-            if function_type is not dcc.RangeSlider:
-                if isinstance(filter_value, list):  # check if filter_value is a list
-                    if filter_value:
-                        filtered_df = filtered_df[
-                            filtered_df[column_name].isin(filter_value)
-                        ]
-                    else:
-                        filtered_df = filtered_df
-                else:
-                    filtered_df = filtered_df[filtered_df[column_name] == filter_value]
-            else:
+
+            if function_type is dcc.Slider:
+                filtered_df = filtered_df[filtered_df[column_name] == filter_value]
+
+            elif function_type is dcc.Dropdown:
+                filtered_df = filtered_df[filtered_df[column_name].isin(filter_value)]
+
+            elif function_type is dcc.Input:
+                print(filter_value)
+                filtered_df = filtered_df[
+                    filtered_df[column_name].str.contains(filter_value, regex=True)
+                ]
+
+            elif function_type is dcc.RangeSlider:
                 filtered_df = filtered_df[
                     (filtered_df[column_name] >= filter_value[0])
                     & (filtered_df[column_name] <= filter_value[1])
                 ]
+
+            else:
+                filtered_df = filtered_df
 
     else:
         filtered_df = df
@@ -304,5 +335,6 @@ def load_data():
     if os.path.exists("data.json"):
         with open("data.json", "r") as file:
             data = json.load(file)
+            print(data)
         return data
     return None
