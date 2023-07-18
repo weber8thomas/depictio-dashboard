@@ -2,6 +2,7 @@ import plotly.express as px
 from dash import html, dcc, Input, Output, State
 import os, json
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 
 
 AVAILABLE_PLOT_TYPES = {
@@ -20,7 +21,6 @@ AVAILABLE_PLOT_TYPES = {
             "log_x": True,
             "size_max": 55,
             "title": "Scatter plot of GDP per Capita vs. Life Expectancy",
-
             # "animation_frame": "year",
         },
     },
@@ -117,8 +117,41 @@ AVAILABLE_PLOT_TYPES = {
         "material-icons": "tune",
         "function": dcc.Slider,
         "kwargs": {
-            "legend": "Average life expectancy",
             "column": "year",
+            # "operation": lambda col: round(col.mean(), 2),
+            # "min": df["year"].min(),
+            # "max": df["year"].max(),
+            # "value": init_year,
+            # "step": None,
+            # "included": True,
+        },
+    },
+    "continent-multiselect-input": {
+        "type": "Input",
+        "description": "Continent dropdown",
+        "property": "Property I",
+        "material-icons": "tune",
+        "function": dcc.Dropdown,
+        "kwargs": {
+            "column": "continent",
+            "multi": True,
+            # "operation": lambda col: round(col.mean(), 2),
+            # "min": df["year"].min(),
+            # "max": df["year"].max(),
+            # "value": init_year,
+            # "step": None,
+            # "included": True,
+        },
+    },
+    "lifeexp-slider-input": {
+        "type": "Input",
+        "description": "Continent dropdown",
+        "property": "Property I",
+        "material-icons": "tune",
+        "function": dcc.Dropdown,
+        "kwargs": {
+            "column": "continent",
+            "multi": True,
             # "operation": lambda col: round(col.mean(), 2),
             # "min": df["year"].min(),
             # "max": df["year"].max(),
@@ -142,13 +175,43 @@ def create_card(value, legend):
     )
 
 
-def create_input_component(value, df, dict_data, input_component_id):
+def create_input_component(df, dict_data, input_component_id):
     # print(dict_data)
     col = dict_data["kwargs"]["column"]
     # print(col)
     # print(df)
     ComponentFunction = dict_data.get("function", dcc.Slider)  # Default to dcc.Slider
 
+    if ComponentFunction is dcc.Slider:
+        kwargs = dict(
+            min=df[f"{col}"].min(),
+            max=df[f"{col}"].max(),
+            # value=value,
+            marks={str(elem): str(elem) for elem in df[f"{col}"].unique()},
+            step=None,
+            included=True,
+        )
+    elif ComponentFunction is dcc.Dropdown:
+        kwargs = dict(
+            options=[{"label": i, "value": i} for i in df[f"{col}"].unique().tolist()],
+            # value=value,
+            multi=True,
+        )
+    # kwargs = dict(
+    #     min=df[f"{col}"].min(),
+    #     max=df[f"{col}"].max(),
+    #     value=value,
+    #     marks={str(elem): str(elem) for elem in df[f"{col}"].unique()},
+    #     step=None,
+    #     included=True,
+    # )
+
+    # return ComponentFunction(
+    #     # id=input_component_id,
+    #     # df[f"{col}"].unique().tolist(),
+    #     id={"type": "input-component", "index": input_component_id},
+    #     **kwargs,
+    # )
     return html.Div(
         children=[
             html.H5(dict_data["description"]),
@@ -156,12 +219,7 @@ def create_input_component(value, df, dict_data, input_component_id):
                 # id=input_component_id,
                 # df[f"{col}"].unique().tolist(),
                 id={"type": "input-component", "index": input_component_id},
-                min=df[f"{col}"].min(),
-                max=df[f"{col}"].max(),
-                value=value,
-                marks={str(elem): str(elem) for elem in df[f"{col}"].unique()},
-                step=None,
-                included=True,
+                **kwargs,
             ),
         ]
     )
@@ -172,10 +230,28 @@ def process_data_for_card(df, column, operation):
     return value
 
 
-def create_initial_figure(df, selected_year, plot_type, id=None):
+def create_initial_figure(df, plot_type, input_id=None, filter=dict(), id=None):
     # print("TOTO")
     # print(selected_year)
-    filtered_df = df[df.year == selected_year]
+    print(df)
+    print(filter)
+    print(plot_type)
+    if filter and input_id:
+        filtered_df = df
+        # Apply all active filters
+        for input_component_name, filter_value in filter.items():
+            column_name = AVAILABLE_PLOT_TYPES[input_component_name]["kwargs"]["column"]
+            print(column_name, filter_value)
+            if isinstance(filter_value, list):  # check if filter_value is a list
+                if filter_value:
+                    filtered_df = filtered_df[filtered_df[column_name].isin(filter_value)]
+                else:
+                    filtered_df = filtered_df
+            else:
+                filtered_df = filtered_df[filtered_df[column_name] == filter_value]
+
+    else:
+        filtered_df = df
     # filtered_df = df
     # print(plot_type)
     if AVAILABLE_PLOT_TYPES[plot_type]["type"] is "Card":
@@ -190,7 +266,12 @@ def create_initial_figure(df, selected_year, plot_type, id=None):
             AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]["legend"],
         )
     elif AVAILABLE_PLOT_TYPES[plot_type]["type"] is "Input":
-        fig = create_input_component(selected_year, df, AVAILABLE_PLOT_TYPES[plot_type], id)
+        fig = create_input_component(
+            df,
+            AVAILABLE_PLOT_TYPES[plot_type],
+            input_component_id=id
+            # selected_year, df, AVAILABLE_PLOT_TYPES[plot_type], id
+        )
     else:
         fig = AVAILABLE_PLOT_TYPES[plot_type]["function"](
             filtered_df, **AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]
