@@ -92,11 +92,9 @@ AVAILABLE_PLOT_TYPES = {
         "property": "Property X",
         "material-icons": "score",
         "function": dbc.Card,
-        "kwargs": {
-            "legend": "Countries number",
-            "column": "country",
-            "operation": lambda col: col.nunique(),
-        },
+        "column": "country",
+        "operation": lambda col: col.nunique(),
+        "kwargs": {},
     },
     "global-lifeexp-card": {
         "type": "Card",
@@ -104,11 +102,9 @@ AVAILABLE_PLOT_TYPES = {
         "property": "Property X",
         "material-icons": "score",
         "function": dbc.Card,
-        "kwargs": {
-            "legend": "Average life expectancy",
-            "column": "lifeExp",
-            "operation": lambda col: round(col.mean(), 2),
-        },
+        "column": "lifeExp",
+        "operation": lambda col: round(col.mean(), 2),
+        "kwargs": {},
     },
     "time-slider-input": {
         "type": "Input",
@@ -116,8 +112,8 @@ AVAILABLE_PLOT_TYPES = {
         "property": "Property Z",
         "material-icons": "tune",
         "function": dcc.Slider,
+        "column": "year",
         "kwargs": {
-            "column": "year",
             # "operation": lambda col: round(col.mean(), 2),
             # "min": df["year"].min(),
             # "max": df["year"].max(),
@@ -132,8 +128,8 @@ AVAILABLE_PLOT_TYPES = {
         "property": "Property I",
         "material-icons": "tune",
         "function": dcc.Dropdown,
+        "column": "continent",
         "kwargs": {
-            "column": "continent",
             "multi": True,
             # "operation": lambda col: round(col.mean(), 2),
             # "min": df["year"].min(),
@@ -149,8 +145,8 @@ AVAILABLE_PLOT_TYPES = {
         "property": "Property J",
         "material-icons": "tune",
         "function": dcc.RangeSlider,
+        "column": "lifeExp",
         "kwargs": {
-            "column": "lifeExp",
             # "multi": True,
             # "operation": lambda col: round(col.mean(), 2),
             # "min": df["year"].min(),
@@ -166,8 +162,8 @@ AVAILABLE_PLOT_TYPES = {
         "property": "Property M",
         "material-icons": "search",
         "function": dcc.Input,
+        "column": "country",
         "kwargs": {
-            "column": "country",
             # "multi": True,
             # "operation": lambda col: round(col.mean(), 2),
             # "min": df["year"].min(),
@@ -194,7 +190,7 @@ def create_card(value, legend):
 
 def create_input_component(df, dict_data, input_component_id):
     # print(dict_data)
-    col = dict_data["kwargs"]["column"]
+    col = dict_data["column"]
     # print(col)
     # print(df)
     ComponentFunction = dict_data.get("function", dcc.Slider)  # Default to dcc.Slider
@@ -274,7 +270,7 @@ def create_initial_figure(df, plot_type, input_id=None, filter=dict(), id=None):
         filtered_df = df
         # Apply all active filters
         for input_component_name, filter_value in filter.items():
-            column_name = AVAILABLE_PLOT_TYPES[input_component_name]["kwargs"]["column"]
+            column_name = AVAILABLE_PLOT_TYPES[input_component_name]["column"]
             function_type = AVAILABLE_PLOT_TYPES[input_component_name]["function"]
             print(column_name, filter_value)
 
@@ -306,13 +302,13 @@ def create_initial_figure(df, plot_type, input_id=None, filter=dict(), id=None):
     if AVAILABLE_PLOT_TYPES[plot_type]["type"] is "Card":
         value = process_data_for_card(
             filtered_df,
-            AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]["column"],
-            AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]["operation"],
+            AVAILABLE_PLOT_TYPES[plot_type]["column"],
+            AVAILABLE_PLOT_TYPES[plot_type]["operation"],
         )
         # print(value)
         fig = create_card(
             value,
-            AVAILABLE_PLOT_TYPES[plot_type]["kwargs"]["legend"],
+            AVAILABLE_PLOT_TYPES[plot_type]["description"],
         )
     elif AVAILABLE_PLOT_TYPES[plot_type]["type"] is "Input":
         fig = create_input_component(
