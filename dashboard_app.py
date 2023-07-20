@@ -308,7 +308,7 @@ def toggle_modal_dashboard(n1, n2, is_open):
     # Input("time-input", "value"),
 )
 def display_selected_value(value):
-    return html.Div("Selected year: {}".format(value))
+    return html.Div("Selected inputs: {}".format(value))
 
 
 @app.callback(
@@ -358,15 +358,15 @@ def update_draggable_children(
     new_layouts = args[-5]
     # print(args[-10])
     switch_state = True if len(args[-10]) > 0 else False
-    switch_state_index = -1 if switch_state is True else 0
-    # print(f"Switch state: {switch_state}")
+    switch_state_index = -1 if switch_state is True else -1
+    print(f"Switch state: {switch_state}")
 
     # remove-button -6
     # selected_year = args[-5]
 
     # TODO: fix this
     selected_year = init_year
-
+    
     current_draggable_children = args[-4]
     current_layouts = args[-3]
     stored_layout = args[-2]
@@ -376,10 +376,15 @@ def update_draggable_children(
 
     # Enumerate through all the children
     for j, child in enumerate(current_draggable_children):
+        print(f"TOTO-{j}")
+        print(child["props"]["id"])
+        print(child["props"]["children"][switch_state_index]["props"])
 
         # Filter out those children that are not input components
         if "-input" in child["props"]["id"] and "value" in child["props"]["children"][switch_state_index]["props"]["children"][-1]["props"]:
             # Extract the id and the value of the input component
+            print(f"TATA-{j}")
+
             id_components = child["props"]["children"][switch_state_index]["props"]["children"][-1]["props"]["id"]["index"].split("-")[2:]
             value = child["props"]["children"][switch_state_index]["props"]["children"][-1]["props"]["value"]
             
@@ -707,6 +712,7 @@ def update_draggable_children(
             graph = child["props"]["children"][
                 -1
             ]  # Assuming graph is always the last child
+            print(child["props"]["children"])
             if switch_state:  # If switch is 'on', add the remove button
                 remove_button = dbc.Button(
                     "Remove",
