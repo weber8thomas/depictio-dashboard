@@ -714,68 +714,90 @@ def update_modal(n_clicks, ids):
                 id_index = id["index"]
 
                 return [
-                    dcc.Graph(
-                        figure=figure, id={"type": "graph", "index": id["index"]}
-                    ),
-                    dbc.Button(
-                        "Edit",
-                        id="edit-button",
-                        # id={"type": "edit-button", "index": f"edit-btn-{id_index}"},
-                        # color="primary",
-                        n_clicks=0,
-                        size="lg",
-                        # style={"font-size": "22px"},
-                    ),
-                    dbc.Collapse(
-                        dbc.Accordion(
-                            [
-                                dbc.AccordionItem(
-                                    dcc.Dropdown(
-                                        options=[
-                                            {"label": e, "value": e}
-                                            for e in list(df.columns)
-                                        ],
-                                        id={"type": "tmp-x", "index": id["index"]},
-                                    ),
-                                    title="x",
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dcc.Graph(
+                                    figure=figure,
+                                    id={"type": "graph", "index": id["index"]},
                                 ),
-                                dbc.AccordionItem(
-                                    dcc.Dropdown(
-                                        options=[
-                                            {"label": e, "value": e}
-                                            for e in list(df.columns)
-                                        ],
-                                        id={"type": "tmp-y", "index": id["index"]},
+                                width="auto",
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Button(
+                                        "Edit",
+                                        id="edit-button",
+                                        # id={"type": "edit-button", "index": f"edit-btn-{id_index}"},
+                                        # color="primary",
+                                        n_clicks=0,
+                                        size="lg",
+                                        # style={"font-size": "22px"},
                                     ),
-                                    title="y",
-                                ),
-                                dbc.AccordionItem(
-                                    dcc.Dropdown(
-                                        options=[
-                                            {"label": e, "value": e}
-                                            for e in list(df.columns)
-                                        ],
-                                        id={"type": "tmp-color", "index": id["index"]},
+                                    dbc.Collapse(
+                                        dbc.Accordion(
+                                            [
+                                                dbc.AccordionItem(
+                                                    dcc.Dropdown(
+                                                        options=[
+                                                            {"label": e, "value": e}
+                                                            for e in list(df.columns)
+                                                        ],
+                                                        id={
+                                                            "type": "tmp-x",
+                                                            "index": id["index"],
+                                                        },
+                                                    ),
+                                                    title="x",
+                                                ),
+                                                dbc.AccordionItem(
+                                                    dcc.Dropdown(
+                                                        options=[
+                                                            {"label": e, "value": e}
+                                                            for e in list(df.columns)
+                                                        ],
+                                                        id={
+                                                            "type": "tmp-y",
+                                                            "index": id["index"],
+                                                        },
+                                                    ),
+                                                    title="y",
+                                                ),
+                                                dbc.AccordionItem(
+                                                    dcc.Dropdown(
+                                                        options=[
+                                                            {"label": e, "value": e}
+                                                            for e in list(df.columns)
+                                                        ],
+                                                        id={
+                                                            "type": "tmp-color",
+                                                            "index": id["index"],
+                                                        },
+                                                    ),
+                                                    title="color",
+                                                ),
+                                            ],
+                                            id="accordion",
+                                            flush=True,
+                                            always_open=True,
+                                            persistence=True,
+                                            start_collapsed=True,
+                                        ),
+                                        # id={"type": "collapse", "index": id["index"]},
+                                        id="collapse",
+                                        is_open=False,
+                                        style={
+                                            "height": "100%",
+                                            "width": "100%",
+                                            "display": "flex",
+                                            "flex-direction": "column",
+                                            "flex-grow": "0",
+                                        },
                                     ),
-                                    title="color",
-                                ),
-                            ],
-                            id="accordion",
-                            flush=True,
-                            always_open=True,
-                            persistence=True,
-                            start_collapsed=True,
-                        ),
-                        # id={"type": "collapse", "index": id["index"]},
-                        id="collapse",
-                        is_open=False,
-                        style={
-                            "height": "100%",
-                            "width": "100%",
-                            "display": "flex",
-                            "flex-direction": "column",
-                            "flex-grow": "0",
-                        },
+                                ],
+                                width="auto",
+                            ),
+                        ]
                     ),
                     html.Button(
                         "Done",
