@@ -205,61 +205,10 @@ app.layout = html.Div(
             [
                 # dcc.Interval(
                 #     id="interval",
-                #     interval=1000,  # Save slider value every 1 second
+                #     interval=2000,  # Save slider value every 1 second
                 #     n_intervals=0,
                 # ),
                 dcc.Store(id="selections-store", storage_type="session", data={}),
-                # html.H1(
-                #     "Prepare your visualization",
-                #     className="text-center mb-4",
-                # ),
-                # html.Hr(),
-                # dbc.Row(
-                #     [
-                #         dbc.Col(
-                #             [
-                #                 dbc.Button(
-                #                     "Edit",
-                #                     id="edit-button",
-                #                     color="primary",
-                #                     size="lg",
-                #                     style={"font-size": "22px"},
-                #                 ),
-                #             ],
-                #             className="d-flex justify-content-center align-items-center",
-                #         ),
-                #         # html.Hr(),
-                #         # dbc.Row(
-                #         #     [
-                #         #         dbc.Col(
-                #         #             dcc.Graph(id="graph-container", config={"editable": True}),
-                #         #         ),
-                #         #     ],
-                #         #     className="mt-3",
-                #         # ),
-                #     ],
-                #     className="text-center mt-3",
-                #     justify="center",
-                # ),
-                # html.Hr(),
-                # html.Tr(),
-                # dcc.Store("offcanvas-state-store", storage_type="session"),
-                # dbc.Row(
-                #     [
-                #         dbc.Offcanvas(
-                #             [
-                #                 html.Div(id="specific-params-container"),
-                #             ],
-                #             id="modal",
-                #             title="Edit Menu",
-                #             scrollable=True,
-                #             # size="xl",
-                #             backdrop=False,
-                #             placement="end",
-                #         ),
-                #     ],
-                #     justify="center",
-                # ),
             ],
             fluid=False,
         ),
@@ -269,17 +218,6 @@ app.layout = html.Div(
         # html.Div(id="tmp-container"),
     ]
 )
-
-
-# Add a Div element for testing the button's n_clicks
-
-
-@app.callback(
-    Output("test-div", "children"),
-    Input("edit-button", "n_clicks"),
-)
-def test_button_clicks(n_clicks):
-    return str(n_clicks)
 
 
 @app.callback(
@@ -300,7 +238,7 @@ def close_modal(n_clicks):
     prevent_initial_call=True,
 )
 def add_new_div(n, children, layouts):
-    print("index: {}".format(n))
+    # print("index: {}".format(n))
     new_plot_id = f"graph-{n}"
 
     new_element = html.Div(
@@ -378,194 +316,151 @@ def add_new_div(n, children, layouts):
         if size not in layouts:
             layouts[size] = []
         updated_layouts[size] = layouts[size] + [new_layout_item]
-    # print(layouts)
-    # print(updated_layouts)
-    # print(children)
     return children, updated_layouts
 
 
-# # define the callback to show/hide the modal
-# @dash.callback(
-#     Output("modal", "is_open"),
-#     # [Output({"type": "edit-modal", "index": MATCH}, "is_open")],
-#     [Input("edit-button", "n_clicks")],
-#     # [
-#     #     Input({"type": "edit-button", "index": MATCH}, "n_clicks"),
-#     # ],
-#     # [State({"type": "edit-modal", "index": MATCH}, "is_open")],
-#     [State("modal", "is_open")],
-#     prevent_initial_call=True,
-# )
-# def toggle_modal(n1, is_open):
-#     print(n1, is_open)
-#     if n1:
-#         return not is_open
-#     return is_open
-
-
-# def generate_callback(element_id):
-#     @dash.callback(
-#         Output(f"stored-{element_id}", "data"),
-#         Input("interval", "n_intervals"),
-#         State(element_id, "value"),
-#     )
-#     def save_value(n_intervals, value):
-#         if n_intervals == 0:
-#             raise dash.exceptions.PreventUpdate
-#         return value
-
-#     @dash.callback(
-#         Output(element_id, "value"),
-#         Input(f"stored-{element_id}", "data"),
-#     )
-#     def update_value(data):
-#         if data is None:
-#             raise dash.exceptions.PreventUpdate
-#         return data
-
-#     return save_value, update_value
-
-
-app.layout.children.insert(
-    0,
-    dcc.Store(id=f"stored-visualization-type", storage_type="session", data="scatter"),
+# Define the callback to update the specific parameters dropdowns
+@dash.callback(
+    [
+        Output({"type": "collapse2", "index": MATCH}, "children"),
+    ],
+    [Input({"type": "edit-button", "index": MATCH}, "n_clicks")],
+    [State({"type": "edit-button", "index": MATCH}, "id")],
+    # prevent_initial_call=True,
 )
+def update_specific_params(n_clicks, edit_button_id):
+    print("update_specific_params")
+    print(n_clicks, edit_button_id)
 
-# save_value_callback, update_value_callback = generate_callback("visualization-type")
+    value = "scatter"
+    if value is not None:
+        specific_params_options = [
+            {"label": param_name, "value": param_name}
+            for param_name in specific_params[value]
+        ]
 
+        specific_params_dropdowns = list()
+        for e in specific_params[value]:
+            processed_type_tmp = param_info[value][e]["processed_type"]
+            allowed_types = ["str", "int", "float", "column"]
+            if processed_type_tmp in allowed_types:
+                input_fct = plotly_bootstrap_mapping[processed_type_tmp]
+                tmp_options = dict()
 
-# # Define the callback to update the specific parameters dropdowns
-# @dash.callback(
-#     [
-#         Output("specific-params-container", "children"),
-#         # Output({"type": "specific-params-container", "index": MATCH, "value": ALL}, "children"),
-#         # Output("offcanvas-state-store", "data"),
-#     ],
-#     # [Input("visualization-type", "value"), Input("interval", "n_intervals")],
-#     [Input("interval", "n_intervals")],
-#     # [State("offcanvas-state-store", "data")],
-#     prevent_initial_call=True,
-# )
-# def update_specific_params(n_intervals):
-#     # def update_specific_params(n_intervals, offcanvas_states):
-#     # def update_specific_params(value, n_intervals, offcanvas_states):
-#     # print(value)
-#     value = "scatter"
-#     if value is not None:
-#         specific_params_options = [
-#             {"label": param_name, "value": param_name}
-#             for param_name in specific_params[value]
-#         ]
+                if processed_type_tmp == "column":
+                    tmp_options = {
+                        "options": list(df.columns),
+                        "value": None,
+                        "persistence": True,
+                        "id": {
+                            "type": f"tmp-{e}",
+                            "index": edit_button_id["index"],
+                        },
+                    }
+                if processed_type_tmp == "str":
+                    tmp_options = {
+                        "placeholder": e,
+                        "type": "text",
+                        "persistence": True,
+                        "id": {
+                            "type": f"tmp-{e}",
+                            "index": edit_button_id["index"],
+                        },
+                        "value": None,
+                    }
+                if processed_type_tmp in ["int", "float"]:
+                    tmp_options = {
+                        "placeholder": e,
+                        "type": "number",
+                        "persistence": True,
+                        "id": {
+                            "type": f"tmp-{e}",
+                            "index": edit_button_id["index"],
+                        },
+                        "value": None,
+                    }
+                input_fct_with_params = input_fct(**tmp_options)
+                accordion_item = dbc.AccordionItem(
+                    [dbc.Row(input_fct_with_params)],
+                    className="my-2",
+                    title=e,
+                )
+                specific_params_dropdowns.append(accordion_item)
 
-#         specific_params_dropdowns = list()
-#         for e in specific_params[value]:
-#             processed_type_tmp = param_info[value][e]["processed_type"]
-#             allowed_types = ["str", "int", "float", "column"]
-#             if processed_type_tmp in allowed_types:
-#                 input_fct = plotly_bootstrap_mapping[processed_type_tmp]
-#                 # print(e, input_fct(), processed_type_tmp)
-#                 tmp_options = dict()
+        secondary_common_params_dropdowns = list()
+        for e in secondary_common_params:
+            processed_type_tmp = param_info[value][e]["processed_type"]
+            allowed_types = ["str", "int", "float", "column"]
+            if processed_type_tmp in allowed_types:
+                input_fct = plotly_bootstrap_mapping[processed_type_tmp]
+                tmp_options = dict()
 
-#                 if processed_type_tmp == "column":
-#                     tmp_options = {
-#                         "options": list(df.columns),
-#                         "value": None,
-#                         "persistence": True,
-#                         "id": f"{e}",
-#                     }
-#                 if processed_type_tmp == "str":
-#                     tmp_options = {
-#                         "placeholder": e,
-#                         "type": "text",
-#                         "persistence": True,
-#                         "id": f"{e}",
-#                         "value": None,
-#                     }
-#                 if processed_type_tmp in ["int", "float"]:
-#                     tmp_options = {
-#                         "placeholder": e,
-#                         "type": "number",
-#                         "persistence": True,
-#                         "id": f"{e}",
-#                         "value": None,
-#                     }
-#                 input_fct_with_params = input_fct(**tmp_options)
-#                 accordion_item = dbc.AccordionItem(
-#                     [dbc.Row(input_fct_with_params)],
-#                     className="my-2",
-#                     title=e,
-#                 )
-#                 specific_params_dropdowns.append(accordion_item)
+                if processed_type_tmp == "column":
+                    tmp_options = {
+                        "options": list(df.columns),
+                        "value": None,
+                        "persistence": True,
+                        "id": {
+                            "type": f"tmp-{e}",
+                            "index": edit_button_id["index"],
+                        },
+                    }
+                if processed_type_tmp == "str":
+                    tmp_options = {
+                        "placeholder": e,
+                        "type": "text",
+                        "persistence": True,
+                        "id": {
+                            "type": f"tmp-{e}",
+                            "index": edit_button_id["index"],
+                        },
+                        "value": None,
+                    }
+                if processed_type_tmp in ["int", "float"]:
+                    tmp_options = {
+                        "placeholder": e,
+                        "type": "number",
+                        "persistence": True,
+                        "id": {
+                            "type": f"tmp-{e}",
+                            "index": edit_button_id["index"],
+                        },
+                        "value": None,
+                    }
 
-#         secondary_common_params_dropdowns = list()
-#         for e in secondary_common_params:
-#             processed_type_tmp = param_info[value][e]["processed_type"]
-#             allowed_types = ["str", "int", "float", "column"]
-#             if processed_type_tmp in allowed_types:
-#                 input_fct = plotly_bootstrap_mapping[processed_type_tmp]
-#                 tmp_options = dict()
+                input_fct_with_params = input_fct(**tmp_options)
+                accordion_item = dbc.AccordionItem(
+                    [dbc.Row(input_fct_with_params)],
+                    className="my-2",
+                    title=e,
+                )
+                secondary_common_params_dropdowns.append(accordion_item)
 
-#                 if processed_type_tmp == "column":
-#                     tmp_options = {
-#                         "options": list(df.columns),
-#                         "value": None,
-#                         "persistence": True,
-#                         "id": f"{e}",
-#                     }
-#                 if processed_type_tmp == "str":
-#                     tmp_options = {
-#                         "placeholder": e,
-#                         "type": "text",
-#                         "persistence": True,
-#                         "id": f"{e}",
-#                         "value": None,
-#                     }
-#                 if processed_type_tmp in ["int", "float"]:
-#                     tmp_options = {
-#                         "placeholder": e,
-#                         "type": "number",
-#                         "persistence": True,
-#                         "id": f"{e}",
-#                         "value": None,
-#                     }
-#                 input_fct_with_params = input_fct(**tmp_options)
-#                 accordion_item = dbc.AccordionItem(
-#                     [dbc.Row(input_fct_with_params)],
-#                     className="my-2",
-#                     title=e,
-#                 )
-#                 secondary_common_params_dropdowns.append(accordion_item)
-
-#         secondary_common_params_layout = [html.H5("Common parameters")] + [
-#             dbc.Accordion(
-#                 secondary_common_params_dropdowns,
-#                 flush=True,
-#                 always_open=True,
-#                 persistence_type="session",
-#                 persistence=True,
-#                 id="accordion-sec-common",
-#             ),
-#         ]
-#         dynamic_specific_params_layout = [
-#             html.H5(f"{value.capitalize()} specific parameters")
-#         ] + [
-#             dbc.Accordion(
-#                 specific_params_dropdowns,
-#                 flush=True,
-#                 always_open=True,
-#                 persistence_type="session",
-#                 persistence=True,
-#                 id="accordion",
-#             ),
-#         ]
-
-#         return (
-#             secondary_common_params_layout + dynamic_specific_params_layout,
-#             # secondary_common_params_layout + dynamic_specific_params_layout,
-#         )
-#     else:
-#         # return html.Div(), html.Div()
-#         return html.Div()
+        secondary_common_params_layout = [html.H5("Common parameters")] + [
+            dbc.Accordion(
+                secondary_common_params_dropdowns,
+                flush=True,
+                always_open=True,
+                persistence_type="session",
+                persistence=True,
+                id="accordion-sec-common",
+            ),
+        ]
+        dynamic_specific_params_layout = [
+            html.H5(f"{value.capitalize()} specific parameters")
+        ] + [
+            dbc.Accordion(
+                specific_params_dropdowns,
+                flush=True,
+                always_open=True,
+                persistence_type="session",
+                persistence=True,
+                id="accordion",
+            ),
+        ]
+        return [secondary_common_params_layout + dynamic_specific_params_layout]
+    else:
+        return html.Div()
 
 
 def generate_dropdown_ids(value):
@@ -577,125 +472,110 @@ def generate_dropdown_ids(value):
     return secondary_param_ids + specific_param_ids
 
 
+
 @app.callback(
-    Output("collapse", "is_open"),
-    [Input("edit-button", "n_clicks")],
-    [State("collapse", "is_open")],
+    Output(
+        {
+            "type": "collapse2",
+            "index": MATCH,
+        },
+        "is_open",
+    ),
+    [
+        Input(
+            {
+                "type": "edit-button",
+                "index": MATCH,
+            },
+            "n_clicks",
+        )
+    ],
+    [
+        State(
+            {
+                "type": "collapse2",
+                "index": MATCH,
+            },
+            "is_open",
+        )
+    ],
+    prevent_initial_call=True,
 )
 def toggle_collapse(n, is_open):
-    print(is_open)
-    if n is None or n == 0:
+    print(n, is_open, n%2 == 0)
+    if n%2 == 0:
         return False
     else:
-        return not is_open
+        return True
 
 
-# @app.callback(
-#     Output("collapse", "is_open"),
-#     [Input("edit-button", "n_clicks")],
-#     [State("collapse", "is_open")],
-#     prevent_initial_call=True,
-# )
-# def toggle_collapse(n, is_open):
-#     print(n, is_open)
-#     if n:
-#         return not is_open
-#     return is_open
+@app.callback(
+    Output({"type": "dict_kwargs", "index": MATCH}, "value"),
+    [
+        Input({"type": "collapse2", "index": MATCH}, "children"),
+    ],
+    # prevent_initial_call=True,
+)
+def get_values_to_generate_kwargs(args):
+    print("get_values_to_generate_kwargs")
 
+    if args:
+        accordion_secondary_common_params = args[1]["props"]["children"]
+        if accordion_secondary_common_params:
+            accordion_secondary_common_params = [
+                param["props"]["children"][0]["props"]["children"]
+                for param in accordion_secondary_common_params
+            ]
 
-# @app.callback(
-#     Output({"type": "tmp-container", "index": MATCH}, "children"),
-#     [
-#         Input({"type": "tmp-x", "index": MATCH}, "value"),
-#         Input({"type": "tmp-y", "index": MATCH}, "value"),
-#         Input({"type": "tmp-color", "index": MATCH}, "value"),
-#     ],
-#     # [Input("tmp-x", "value"), Input("tmp-y", "value"), Input("tmp-color", "value")],
-#     prevent_initial_call=True,
-# )
-# def toggle_collapse(x, y, color):
-#     return "X: {}, Y: {}, Color: {}".format(x, y, color)
+            accordion_secondary_common_params_args = {
+                elem["props"]["id"]["type"].replace("tmp-", ""): elem["props"]["value"]
+                for elem in accordion_secondary_common_params
+            }
+            print(accordion_secondary_common_params_args)
+            # figure = px.scatter(df, **accordion_secondary_common_params_args)
+            return accordion_secondary_common_params_args
+
+        # accordion_specific_params = args[0][3]
 
 
 @app.callback(
     Output({"type": "graph", "index": MATCH}, "figure"),
     [
-        Input({"type": "tmp-x", "index": MATCH}, "value"),
-        Input({"type": "tmp-y", "index": MATCH}, "value"),
-        Input({"type": "tmp-color", "index": MATCH}, "value"),
+        Input({"type": "dict_kwargs", "index": MATCH}, "value"),
+        # Input("interval", "n_intervals"),
     ],
-    prevent_initial_call=True,
+    # prevent_initial_call=True,
 )
-def update_figure(x, y, color):
-    print("X: {}, y: {}, color: {}".format(x, y, color))
-    if x or y or color:
-        print("TOTO update figure")
-        # Your logic here to generate the figure using x, y, and color.
-        # This will be triggered by the changes in the dropdowns and the n_clicks of the "Figure" button.
-        figure = px.scatter(df, x=x, y=y, color=color)
+def update_figure(args):
+    print("update figure")
+    print(args)
+    if args:
+        figure = px.scatter(df, **args)
         return figure
+    print("\n")
+
+    # accordion_specific_params = args[0][3]
 
 
 @app.callback(
     Output({"type": "modal-body", "index": MATCH}, "children"),
-    # Output({"type": "edit-modal", "index": MATCH}, "children"),
     [Input({"type": "btn-option", "index": MATCH, "value": ALL}, "n_clicks")],
     [
         State({"type": "btn-option", "index": MATCH, "value": ALL}, "id"),
-        #  State("visualization-type", "value"),
-        # State({"type": "specific-params-container", "index": MATCH, "value": ALL}, "children"),
-        # State("specific-params-container", "children"),
     ],
     prevent_initial_call=True,
 )
-# def update_modal(n_clicks, ids, children_values):
 def update_modal(n_clicks, ids):
-    # def update_modal(n_clicks, ids, visualization_type, children_values):
     visualization_type = "scatter"
     for n, id in zip(n_clicks, ids):
         if n > 0:
             if id["value"] == "Figure":
-                print("TOTO")
-                # print(children_values)
                 d = dict()
-                print("\n")
-                print("TATA")
-                # if children_values:
-                #     for child in children_values[1]["props"]["children"]:
-                #         print(
-                #             child["props"]["children"][0]["props"]["children"]["props"][
-                #                 "id"
-                #             ]
-                #         )
-                #         d[
-                #             child["props"]["children"][0]["props"]["children"]["props"][
-                #                 "id"
-                #             ].replace(f"{visualization_type}-", "")
-                #         ] = child["props"]["children"][0]["props"]["children"]["props"][
-                #             "value"
-                #         ]
-                #     print("TOTO2")
-
-                #     for child in children_values[3]["props"]["children"]:
-                #         d[
-                #             child["props"]["children"][0]["props"]["children"]["props"][
-                #                 "id"
-                #             ].replace(f"{visualization_type}-", "")
-                #         ] = child["props"]["children"][0]["props"]["children"]["props"][
-                #             "value"
-                #         ]
-                #     print("TATA")
-                #     print(visualization_type)
-                #     print(plotly_vizu_dict)
-                # Process inputs and generate the appropriate graph
                 plot_func = plotly_vizu_dict[visualization_type]
-                print("TATA2")
                 plot_kwargs = dict(
                     x=df.columns[0], y=df.columns[1], color=df.columns[2]
                 )
-                # plot_kwargs = dict(
-                #     x=df.columns[0], y=df.columns[1], color=df.columns[2]
-                # )
+
                 if d:
                     plot_kwargs = d
 
@@ -707,11 +587,6 @@ def update_modal(n_clicks, ids):
                 )
                 # figure = px.scatter(df, x="gdpPercap", y="lifeExp")
                 figure.update_layout(uirevision=1)
-                print("TATA3")
-
-                print("TATA4")
-                print("idindex: ", str(id["index"]))
-                id_index = id["index"]
 
                 return [
                     dbc.Row(
@@ -727,64 +602,19 @@ def update_modal(n_clicks, ids):
                                 [
                                     dbc.Button(
                                         "Edit",
-                                        id="edit-button",
-                                        # id={"type": "edit-button", "index": f"edit-btn-{id_index}"},
+                                        # id="edit-button",
+                                        id={
+                                            "type": "edit-button",
+                                            "index": id["index"],
+                                        },
                                         # color="primary",
                                         n_clicks=0,
                                         size="lg",
                                         # style={"font-size": "22px"},
                                     ),
                                     dbc.Collapse(
-                                        dbc.Accordion(
-                                            [
-                                                dbc.AccordionItem(
-                                                    dcc.Dropdown(
-                                                        options=[
-                                                            {"label": e, "value": e}
-                                                            for e in list(df.columns)
-                                                        ],
-                                                        id={
-                                                            "type": "tmp-x",
-                                                            "index": id["index"],
-                                                        },
-                                                    ),
-                                                    title="x",
-                                                ),
-                                                dbc.AccordionItem(
-                                                    dcc.Dropdown(
-                                                        options=[
-                                                            {"label": e, "value": e}
-                                                            for e in list(df.columns)
-                                                        ],
-                                                        id={
-                                                            "type": "tmp-y",
-                                                            "index": id["index"],
-                                                        },
-                                                    ),
-                                                    title="y",
-                                                ),
-                                                dbc.AccordionItem(
-                                                    dcc.Dropdown(
-                                                        options=[
-                                                            {"label": e, "value": e}
-                                                            for e in list(df.columns)
-                                                        ],
-                                                        id={
-                                                            "type": "tmp-color",
-                                                            "index": id["index"],
-                                                        },
-                                                    ),
-                                                    title="color",
-                                                ),
-                                            ],
-                                            id="accordion",
-                                            flush=True,
-                                            always_open=True,
-                                            persistence=True,
-                                            start_collapsed=True,
-                                        ),
-                                        # id={"type": "collapse", "index": id["index"]},
-                                        id="collapse",
+                                        id={"type": "collapse2", "index": id["index"]},
+                                        # id="collapse",
                                         is_open=False,
                                         style={
                                             "height": "100%",
@@ -805,28 +635,7 @@ def update_modal(n_clicks, ids):
                         n_clicks=0,
                         style={"display": "block"},
                     ),
-                    # dbc.Row(
-                    #     [
-                    #         dbc.Offcanvas(
-                    #             [
-                    #                 html.Div(
-                    #                     # id="specific-params-container",
-                    #                     id={
-                    #                         "type": "specific-params-container",
-                    #                         "index": id["index"],
-                    #                     }
-                    #                 ),
-                    #             ],
-                    #             # id="modal",
-                    #             id={"type": "edit-modal", "index": f"edit-modal-{id_index}"},
-                    #             title="Edit Menu",
-                    #             scrollable=True,
-                    #             # size="xl",
-                    #             backdrop=False,
-                    #         ),
-                    #     ],
-                    #     justify="center",
-                    # ),
+                    dcc.Store(id={"type": "dict_kwargs", "index": id["index"]}),
                 ]
             elif id["value"] == "Card":
                 return [
@@ -852,63 +661,6 @@ def update_modal(n_clicks, ids):
     return []
 
 
-# @app.callback(
-#     Output({"type": "modal-body", "index": MATCH}, "children"),
-#     [Input({"type": "btn-option", "index": MATCH, "value": ALL}, "n_clicks")],
-#     [State({"type": "btn-option", "index": MATCH, "value": ALL}, "id")],
-#     prevent_initial_call=True,
-# )
-# def update_modal(n_clicks, ids):
-#     for n, id in zip(n_clicks, ids):
-#         if n > 0:
-#             if id["value"] == "Figure":
-#                 return [
-#                     dcc.Graph(
-#                         figure=px.scatter(
-#                             df,
-#                             x="gdpPercap",
-#                             y="lifeExp",
-#                             animation_frame="year",
-#                             animation_group="country",
-#                             size="pop",
-#                             color="continent",
-#                             hover_name="country",
-#                             log_x=True,
-#                             size_max=55,
-#                             range_y=[20, 90],
-#                         )
-#                     ),
-#                     html.Button(
-#                         "Done",
-#                         id={"type": "btn-done", "index": id["index"]},
-#                         n_clicks=0,
-#                         style={"display": "block"},
-#                     ),
-#                 ]
-#             elif id["value"] == "Card":
-#                 return [
-#                     html.Div("This is a Card!"),
-#                     html.Button(
-#                         "Done",
-#                         id={"type": "btn-done", "index": id["index"]},
-#                         n_clicks=0,
-#                         style={"display": "block"},
-#                     ),
-#                 ]
-#             elif id["value"] == "Interactive":
-#                 return [
-#                     dcc.Input(id="input-box", type="text"),
-#                     html.Div(id="output-box"),
-#                     html.Button(
-#                         "Done",
-#                         id={"type": "btn-done", "index": id["index"]},
-#                         n_clicks=0,
-#                         style={"display": "block"},
-#                     ),
-#                 ]
-#     # return []
-
-
 @app.callback(
     Output({"type": "add-content", "index": MATCH}, "children"),
     [Input({"type": "btn-done", "index": MATCH}, "n_clicks")],
@@ -916,13 +668,10 @@ def update_modal(n_clicks, ids):
     prevent_initial_call=True,
 )
 def update_button(n_clicks, children):
-    # print("\n")
-    # print("TITI")
-    # print(children)
-
     if n_clicks > 0:
-        return children[:1]
-    # return None
+        print(len(children))
+        print(len(children[0]))
+        return children[0]
 
 
 if __name__ == "__main__":
