@@ -278,7 +278,7 @@ def close_modal(n_clicks):
 )
 def add_new_div(n, children, layouts):
     print("add_new_div")
-    print(app._callback_list)
+    # print(app._callback_list)
 
     print("index: {}".format(n))
     new_plot_id = f"graph-{n}"
@@ -393,7 +393,7 @@ def add_new_div(n, children, layouts):
 )
 def update_specific_params(n_clicks, edit_button_id):
     print("update_specific_params")
-    print(app._callback_list)
+    # print(app._callback_list)
 
     print(n_clicks, edit_button_id)
 
@@ -591,6 +591,7 @@ def toggle_collapse(n, is_open):
         Input({"type": "collapse", "index": MATCH}, "children"),
         Input("interval", "n_intervals"),
     ],
+    [State({"type": "dict_kwargs", "index": MATCH}, "data")],
     # prevent_initial_call=True,
 )
 def get_values_to_generate_kwargs(*args):
@@ -599,9 +600,13 @@ def get_values_to_generate_kwargs(*args):
     print("\n")
 
     children = args[0]
+    existing_kwargs = args[-1]
+    print(existing_kwargs)
+
     if children:
         accordion_secondary_common_params = children[1]["props"]["children"]
         if accordion_secondary_common_params:
+            print("TOTO")
             accordion_secondary_common_params = [
                 param["props"]["children"][0]["props"]["children"]
                 for param in accordion_secondary_common_params
@@ -611,11 +616,14 @@ def get_values_to_generate_kwargs(*args):
                 elem["props"]["id"]["type"].replace("tmp-", ""): elem["props"]["value"]
                 for elem in accordion_secondary_common_params
             }
+            if not {k: v for k, v in accordion_secondary_common_params_args.items() if v is not None}:
+                accordion_secondary_common_params_args = {**accordion_secondary_common_params_args, **existing_kwargs}
+            print(accordion_secondary_common_params)
             return accordion_secondary_common_params_args
         else:
-            return dict()
+            return existing_kwargs
     else:
-        return dict()
+        return existing_kwargs
 
         # accordion_specific_params = args[0][3]
 
@@ -635,7 +643,8 @@ def get_values_to_generate_kwargs(*args):
 def update_figure(*args):
     dict_kwargs = args[0]
     print("update figure")
-    print(app._callback_list)
+    print(dict_kwargs)
+    # # print(app._callback_list)
 
     # print(dict_kwargs)
     dict_kwargs = {k: v for k, v in dict_kwargs.items() if v is not None}
@@ -666,14 +675,11 @@ def update_modal(n_clicks, ids):
         print(n, id)
         if n > 0:
             if id["value"] == "Figure":
-                d = dict()
                 plot_func = plotly_vizu_dict[visualization_type]
                 plot_kwargs = dict(
                     x=df.columns[0], y=df.columns[1], color=df.columns[2]
                 )
 
-                if d:
-                    plot_kwargs = d
 
                 figure = plot_func(
                     df,
@@ -726,7 +732,7 @@ def update_modal(n_clicks, ids):
                         n_clicks=0,
                         style={"display": "block"},
                     ),
-                    dcc.Store(id={"type": "dict_kwargs", "index": id["index"]}),
+                    dcc.Store(id={"type": "dict_kwargs", "index": id["index"]}, data=plot_kwargs, storage_type="session"),
                 ]
             elif id["value"] == "Card":
                 print("Card")
@@ -833,10 +839,9 @@ def update_card_body(input_value, column_value, aggregation_value):
     # Do something with input_value and dropdown_value to generate new card_body
     v = df[column_value].nunique(aggregation_value)
     new_card_body = [html.H5(f"{input_value}"), html.P(f"{v}")]
-    
+
     # You can return anything you want here, as long as it's a valid Dash component or a list of Dash components
     return new_card_body
-
 
 
 @app.callback(
@@ -858,11 +863,20 @@ def update_button(n_clicks, children, btn_id):
     if n_clicks > 0:
         # print(children)
         # figure = children[0]["props"]["children"][0]["props"]["children"]["props"]["figure"]
-        child = children[0]["props"]["children"][0]["props"]["children"]
+        # print(children)
+        child = children[0]["props"]["children"][0]["props"]["children"] # Figure
+        # child = children[0]["props"]["children"][1]["props"]["children"] # Card
+        # print(list(child["props"].keys()))
         # print(child_id)
         # child = children[0]["props"]["children"][0]["props"]["children"]["props"]["children"]
-        # print(child)
-        child["props"]["id"]["type"] = "updated-" + child["props"]["id"]["type"]
+        # print(child)  
+        # if child["props"]["type"] is not "Card":
+        child["props"]["id"]["type"] = "updated-" + child["props"]["id"]["type"] # Figure
+        # else:
+        #     child["props"]["children"]["type"] = (
+        #         "updated-" + child["props"]["id"]["type"]
+        #     )
+
         # print(child)
         # # print(figure)
         return child
