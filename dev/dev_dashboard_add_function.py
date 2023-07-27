@@ -1,6 +1,7 @@
 from dash import html, dcc, Input, Output, State, ALL, MATCH
 from dash_bootstrap_components import Modal, ModalBody, Button
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 import dash
 
 import plotly.express as px
@@ -9,9 +10,9 @@ import pandas as pd
 import dash_draggable
 
 external_stylesheets = [
-    "https://codepen.io/chriddyp/pen/bWLwgP.css",
     dbc.themes.BOOTSTRAP,
     "https://use.fontawesome.com/releases/v5.7.2/css/all.css",
+    "https://codepen.io/chriddyp/pen/bWLwgP.css",
 ]
 
 app = dash.Dash(
@@ -162,6 +163,10 @@ plotly_vizu_dict = {vizu_func.__name__: vizu_func for vizu_func in plotly_vizu_l
 common_params, common_params_names = get_common_params(plotly_vizu_list)
 specific_params = get_specific_params(plotly_vizu_list, common_params)
 
+# print(common_params)
+# print(common_params_names)
+# print(specific_params)
+
 # Generate parameter information and dropdown options
 param_info = get_param_info(plotly_vizu_list)
 dropdown_options = get_dropdown_options(df)
@@ -177,6 +182,7 @@ plotly_bootstrap_mapping = {
     "float": dbc.Input,
     "boolean": dbc.Checklist,
     "column": dcc.Dropdown,
+    "list": dcc.Dropdown,
 }
 
 # Identify the parameters not in the dropdown elements
@@ -185,6 +191,23 @@ secondary_common_params = [
     for e in common_params_names[1:]
     # e for e in common_params_names[1:] if e not in dropdown_elements
 ]
+secondary_common_params_lite = [
+    e
+    for e in secondary_common_params
+    if e
+    not in [
+        "category_orders",
+        "color_discrete_sequence",
+        "color_discrete_map",
+        "log_x",
+        "log_y",
+        "labels",
+        "range_x",
+        "range_y",
+    ]
+]
+# print(secondary_common_params)
+# print("\n")
 
 
 init_layout = dict()
@@ -192,7 +215,14 @@ init_children = list()
 app.layout = html.Div(
     [
         html.H1("Dash Draggable"),
-        html.Button("Add", id="add-button", n_clicks=0),
+        dmc.Button(
+            "Add",
+            id="add-button",
+            size="xl",
+            radius="xl",
+            variant="gradient",
+            n_clicks=0,
+        ),
         dash_draggable.ResponsiveGridLayout(
             id="draggable",
             clearSavedLayout=True,
@@ -203,21 +233,30 @@ app.layout = html.Div(
         ),
         dbc.Container(
             [
-                # dcc.Interval(
-                #     id="interval",
-                #     interval=2000,  # Save slider value every 1 second
-                #     n_intervals=0,
-                # ),
-                dcc.Store(id="selections-store", storage_type="session", data={}),
+                dcc.Interval(
+                    id="interval",
+                    interval=2000,  # Save slider value every 1 second
+                    n_intervals=0,
+                ),
+                # dcc.Store(id="selections-store", storage_type="session", data={}),
             ],
             fluid=False,
         ),
         html.Div(id="output-container"),
         html.Div(id="output-container2"),
-        html.Div(id="test-div"),
-        # html.Div(id="tmp-container"),
     ]
 )
+
+
+@app.callback(
+    Output("collapse", "is_open"),
+    [Input("collapse-button", "n_clicks")],
+    [State("collapse", "is_open")],
+)
+def toggle_collapse(n, is_open):
+    if n:
+        return not is_open
+    return is_open
 
 
 @app.callback(
@@ -238,43 +277,67 @@ def close_modal(n_clicks):
     prevent_initial_call=True,
 )
 def add_new_div(n, children, layouts):
-    # print("index: {}".format(n))
+    print("add_new_div")
+    print(app._callback_list)
+
+    print("index: {}".format(n))
     new_plot_id = f"graph-{n}"
+    print(new_plot_id)
 
     new_element = html.Div(
         [
             html.Div(id={"type": "add-content", "index": n}),
-            Modal(
+            dbc.Modal(
                 id={"type": "modal", "index": n},
                 children=[
-                    dbc.ModalHeader(dbc.ModalTitle("Header")),
-                    ModalBody(
+                    dbc.ModalHeader(html.H5("Chose your new component type")),
+                    dbc.ModalBody(
                         [
-                            html.Button(
-                                "Figure",
-                                id={
-                                    "type": "btn-option",
-                                    "index": n,
-                                    "value": "Figure",
-                                },
-                                n_clicks=0,
-                                style={"display": "inline-block"},
-                            ),
-                            html.Button(
-                                "Card",
-                                id={"type": "btn-option", "index": n, "value": "Card"},
-                                n_clicks=0,
-                                style={"display": "inline-block"},
-                            ),
-                            html.Button(
-                                "Interactive",
-                                id={
-                                    "type": "btn-option",
-                                    "index": n,
-                                    "value": "Interactive",
-                                },
-                                n_clicks=0,
-                                style={"display": "inline-block"},
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        dmc.Button(
+                                            "Figure",
+                                            id={
+                                                "type": "btn-option",
+                                                "index": n,
+                                                "value": "Figure",
+                                            },
+                                            n_clicks=0,
+                                            style={"display": "inline-block"},
+                                            size="xl",
+                                            color="grape",
+                                        )
+                                    ),
+                                    dbc.Col(
+                                        dmc.Button(
+                                            "Card",
+                                            id={
+                                                "type": "btn-option",
+                                                "index": n,
+                                                "value": "Card",
+                                            },
+                                            n_clicks=0,
+                                            style={"display": "inline-block"},
+                                            size="xl",
+                                            color="violet",
+                                        )
+                                    ),
+                                    dbc.Col(
+                                        dmc.Button(
+                                            "Interactive",
+                                            id={
+                                                "type": "btn-option",
+                                                "index": n,
+                                                "value": "Interactive",
+                                            },
+                                            n_clicks=0,
+                                            style={"display": "inline-block"},
+                                            size="xl",
+                                            color="indigo",
+                                        )
+                                    ),
+                                ]
                             ),
                         ],
                         id={"type": "modal-body", "index": n},
@@ -322,7 +385,7 @@ def add_new_div(n, children, layouts):
 # Define the callback to update the specific parameters dropdowns
 @dash.callback(
     [
-        Output({"type": "collapse2", "index": MATCH}, "children"),
+        Output({"type": "collapse", "index": MATCH}, "children"),
     ],
     [Input({"type": "edit-button", "index": MATCH}, "n_clicks")],
     [State({"type": "edit-button", "index": MATCH}, "id")],
@@ -330,6 +393,8 @@ def add_new_div(n, children, layouts):
 )
 def update_specific_params(n_clicks, edit_button_id):
     print("update_specific_params")
+    print(app._callback_list)
+
     print(n_clicks, edit_button_id)
 
     value = "scatter"
@@ -390,6 +455,7 @@ def update_specific_params(n_clicks, edit_button_id):
         secondary_common_params_dropdowns = list()
         for e in secondary_common_params:
             processed_type_tmp = param_info[value][e]["processed_type"]
+            # allowed_types = ["str", "int", "float", "column", "list"]
             allowed_types = ["str", "int", "float", "column"]
             if processed_type_tmp in allowed_types:
                 input_fct = plotly_bootstrap_mapping[processed_type_tmp]
@@ -427,6 +493,17 @@ def update_specific_params(n_clicks, edit_button_id):
                         },
                         "value": None,
                     }
+
+                # if processed_type_tmp is "list":
+                #     tmp_options = {
+                #         # "options": list(df.columns),
+                #         # "value": None,
+                #         "persistence": True,
+                #         "id": {
+                #             "type": f"tmp-{e}",
+                #             "index": edit_button_id["index"],
+                #         },
+                #     }
 
                 input_fct_with_params = input_fct(**tmp_options)
                 accordion_item = dbc.AccordionItem(
@@ -472,11 +549,10 @@ def generate_dropdown_ids(value):
     return secondary_param_ids + specific_param_ids
 
 
-
 @app.callback(
     Output(
         {
-            "type": "collapse2",
+            "type": "collapse",
             "index": MATCH,
         },
         "is_open",
@@ -493,7 +569,7 @@ def generate_dropdown_ids(value):
     [
         State(
             {
-                "type": "collapse2",
+                "type": "collapse",
                 "index": MATCH,
             },
             "is_open",
@@ -502,8 +578,8 @@ def generate_dropdown_ids(value):
     prevent_initial_call=True,
 )
 def toggle_collapse(n, is_open):
-    print(n, is_open, n%2 == 0)
-    if n%2 == 0:
+    print(n, is_open, n % 2 == 0)
+    if n % 2 == 0:
         return False
     else:
         return True
@@ -512,15 +588,19 @@ def toggle_collapse(n, is_open):
 @app.callback(
     Output({"type": "dict_kwargs", "index": MATCH}, "value"),
     [
-        Input({"type": "collapse2", "index": MATCH}, "children"),
+        Input({"type": "collapse", "index": MATCH}, "children"),
+        Input("interval", "n_intervals"),
     ],
     # prevent_initial_call=True,
 )
-def get_values_to_generate_kwargs(args):
+def get_values_to_generate_kwargs(*args):
     print("get_values_to_generate_kwargs")
+    # print(args)
+    print("\n")
 
-    if args:
-        accordion_secondary_common_params = args[1]["props"]["children"]
+    children = args[0]
+    if children:
+        accordion_secondary_common_params = children[1]["props"]["children"]
         if accordion_secondary_common_params:
             accordion_secondary_common_params = [
                 param["props"]["children"][0]["props"]["children"]
@@ -531,9 +611,11 @@ def get_values_to_generate_kwargs(args):
                 elem["props"]["id"]["type"].replace("tmp-", ""): elem["props"]["value"]
                 for elem in accordion_secondary_common_params
             }
-            print(accordion_secondary_common_params_args)
-            # figure = px.scatter(df, **accordion_secondary_common_params_args)
             return accordion_secondary_common_params_args
+        else:
+            return dict()
+    else:
+        return dict()
 
         # accordion_specific_params = args[0][3]
 
@@ -542,15 +624,24 @@ def get_values_to_generate_kwargs(args):
     Output({"type": "graph", "index": MATCH}, "figure"),
     [
         Input({"type": "dict_kwargs", "index": MATCH}, "value"),
-        # Input("interval", "n_intervals"),
+        [
+            Input({"type": f"tmp-{e}", "index": MATCH}, "children")
+            for e in secondary_common_params_lite
+        ],
+        Input("interval", "n_intervals"),
     ],
     # prevent_initial_call=True,
 )
-def update_figure(args):
+def update_figure(*args):
+    dict_kwargs = args[0]
     print("update figure")
-    print(args)
-    if args:
-        figure = px.scatter(df, **args)
+    print(app._callback_list)
+
+    # print(dict_kwargs)
+    dict_kwargs = {k: v for k, v in dict_kwargs.items() if v is not None}
+    print(dict_kwargs)
+    if dict_kwargs:
+        figure = px.scatter(df, **dict_kwargs)
         return figure
     print("\n")
 
@@ -566,8 +657,13 @@ def update_figure(args):
     prevent_initial_call=True,
 )
 def update_modal(n_clicks, ids):
+    print("update_modal")
+    print(n_clicks, ids)
+    print("\n")
+
     visualization_type = "scatter"
     for n, id in zip(n_clicks, ids):
+        print(n, id)
         if n > 0:
             if id["value"] == "Figure":
                 d = dict()
@@ -579,13 +675,10 @@ def update_modal(n_clicks, ids):
                 if d:
                     plot_kwargs = d
 
-                print(plot_func)
-                print(plot_kwargs)
                 figure = plot_func(
                     df,
                     **plot_kwargs,
                 )
-                # figure = px.scatter(df, x="gdpPercap", y="lifeExp")
                 figure.update_layout(uirevision=1)
 
                 return [
@@ -598,33 +691,98 @@ def update_modal(n_clicks, ids):
                                 ),
                                 width="auto",
                             ),
+                            # dbc.Col(width=0.5),
                             dbc.Col(
                                 [
-                                    dbc.Button(
-                                        "Edit",
-                                        # id="edit-button",
-                                        id={
-                                            "type": "edit-button",
-                                            "index": id["index"],
-                                        },
-                                        # color="primary",
-                                        n_clicks=0,
-                                        size="lg",
-                                        # style={"font-size": "22px"},
-                                    ),
-                                    dbc.Collapse(
-                                        id={"type": "collapse2", "index": id["index"]},
-                                        # id="collapse",
-                                        is_open=False,
-                                        style={
-                                            "height": "100%",
-                                            "width": "100%",
-                                            "display": "flex",
-                                            "flex-direction": "column",
-                                            "flex-grow": "0",
-                                        },
-                                    ),
+                                    html.Div(
+                                        children=[
+                                            dmc.Button(
+                                                "Edit",
+                                                id={
+                                                    "type": "edit-button",
+                                                    "index": id["index"],
+                                                },
+                                                n_clicks=0,
+                                                size="lg",
+                                            ),
+                                            dbc.Collapse(
+                                                id={
+                                                    "type": "collapse",
+                                                    "index": id["index"],
+                                                },
+                                                is_open=False,
+                                            ),
+                                        ]
+                                    )
                                 ],
+                                width="auto",
+                            ),
+                        ]
+                    ),
+                    html.Hr(),
+                    dmc.Button(
+                        "Done",
+                        id={"type": "btn-done", "index": id["index"]},
+                        n_clicks=0,
+                        style={"display": "block"},
+                    ),
+                    dcc.Store(id={"type": "dict_kwargs", "index": id["index"]}),
+                ]
+            elif id["value"] == "Card":
+                print("Card")
+                return [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dbc.Card(
+                                    dbc.CardBody(
+                                        [
+                                            dmc.TextInput(
+                                                label="Card title",
+                                                id={
+                                                    "type": "card-input",
+                                                    "index": id["index"],
+                                                },
+                                            ),
+                                            dmc.Select(
+                                                label="Select your column",
+                                                id={
+                                                    "type": "card-dropdown-column",
+                                                    "index": id["index"],
+                                                },
+                                                data=[
+                                                    {"label": e, "value": e}
+                                                    for e in df.columns
+                                                ],
+                                                value=None,
+                                            ),
+                                            dmc.Select(
+                                                label="Select your aggregation method",
+                                                id={
+                                                    "type": "card-dropdown-aggregation",
+                                                    "index": id["index"],
+                                                },
+                                                data=[
+                                                    {"label": e, "value": e}
+                                                    for e in [
+                                                        "average",
+                                                        "median",
+                                                        "sum",
+                                                    ]
+                                                ],
+                                                value=None,
+                                            ),
+                                        ],
+                                    ),
+                                ),
+                                width="auto",
+                            ),
+                            dbc.Col(
+                                dbc.Card(
+                                    dbc.CardBody(
+                                        id={"type": "card-body", "index": id["index"]}
+                                    )
+                                ),
                                 width="auto",
                             ),
                         ]
@@ -635,22 +793,20 @@ def update_modal(n_clicks, ids):
                         n_clicks=0,
                         style={"display": "block"},
                     ),
-                    dcc.Store(id={"type": "dict_kwargs", "index": id["index"]}),
-                ]
-            elif id["value"] == "Card":
-                return [
-                    html.Div("This is a Card!"),
-                    html.Button(
-                        "Done",
-                        id={"type": "btn-done", "index": id["index"]},
-                        n_clicks=0,
-                        style={"display": "block"},
-                    ),
                 ]
             elif id["value"] == "Interactive":
                 return [
-                    dcc.Input(id="input-box", type="text"),
-                    html.Div(id="output-box"),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dcc.Input(
+                                    # id="input-box",
+                                    type="text",
+                                    id={"type": "input", "index": id["index"]},
+                                )
+                            )
+                        ]
+                    ),
                     html.Button(
                         "Done",
                         id={"type": "btn-done", "index": id["index"]},
@@ -662,16 +818,57 @@ def update_modal(n_clicks, ids):
 
 
 @app.callback(
-    Output({"type": "add-content", "index": MATCH}, "children"),
-    [Input({"type": "btn-done", "index": MATCH}, "n_clicks")],
-    [State({"type": "modal-body", "index": MATCH}, "children")],
+    Output({"type": "card-body", "index": MATCH}, "children"),
+    [
+        Input({"type": "card-input", "index": MATCH}, "value"),
+        Input({"type": "card-dropdown-column", "index": MATCH}, "value"),
+        Input({"type": "card-dropdown-aggregation", "index": MATCH}, "value"),
+    ],
     prevent_initial_call=True,
 )
-def update_button(n_clicks, children):
+def update_card_body(input_value, column_value, aggregation_value):
+    if input_value is None or column_value is None or aggregation_value is None:
+        return []
+    # This function is called whenever the input_value or dropdown_value changes
+    # Do something with input_value and dropdown_value to generate new card_body
+    v = df[column_value].nunique(aggregation_value)
+    new_card_body = [html.H5(f"{input_value}"), html.P(f"{v}")]
+    
+    # You can return anything you want here, as long as it's a valid Dash component or a list of Dash components
+    return new_card_body
+
+
+
+@app.callback(
+    Output({"type": "add-content", "index": MATCH}, "children"),
+    [
+        Input({"type": "btn-done", "index": MATCH}, "n_clicks"),
+    ],
+    [
+        State({"type": "modal-body", "index": MATCH}, "children"),
+        State({"type": "btn-done", "index": MATCH}, "id"),
+    ],
+    prevent_initial_call=True,
+)
+def update_button(n_clicks, children, btn_id):
+    print("update_button")
+    print(n_clicks, btn_id)
+    print("\n")
+
     if n_clicks > 0:
-        print(len(children))
-        print(len(children[0]))
-        return children[0]
+        # print(children)
+        # figure = children[0]["props"]["children"][0]["props"]["children"]["props"]["figure"]
+        child = children[0]["props"]["children"][0]["props"]["children"]
+        # print(child_id)
+        # child = children[0]["props"]["children"][0]["props"]["children"]["props"]["children"]
+        # print(child)
+        child["props"]["id"]["type"] = "updated-" + child["props"]["id"]["type"]
+        # print(child)
+        # # print(figure)
+        return child
+        # return dcc.Graph(
+        #     figure=figure, id={"type": "graph", "index": btn_id["index"]}
+        # )
 
 
 if __name__ == "__main__":

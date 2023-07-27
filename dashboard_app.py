@@ -45,7 +45,7 @@ init_year = df["year"].min()
 
 header = dbc.Col(
     [
-        html.H2("Description", className="mb-3"),
+        html.H2("Depictio", className="mb-3"),
         html.Ul(
             [
                 html.Li(
