@@ -1,13 +1,14 @@
+# Import necessary libraries
+import numpy as np
 from dash import html, dcc, Input, Output, State, ALL, MATCH
-from dash_bootstrap_components import Modal, ModalBody, Button
-import dash_bootstrap_components as dbc
-import dash_mantine_components as dmc
 import dash
-
-import plotly.express as px
-import pandas as pd
-
+import dash_bootstrap_components as dbc
 import dash_draggable
+import dash_mantine_components as dmc
+import inspect
+import pandas as pd
+import plotly.express as px
+import re
 
 external_stylesheets = [
     dbc.themes.BOOTSTRAP,
@@ -27,23 +28,317 @@ df = pd.read_csv(
 )
 # print(df)
 
-# Import necessary libraries
-from dash import dcc, html
-from dash.dependencies import Input, Output, State
-import dash
-import dash_bootstrap_components as dbc
-import pandas as pd
-import plotly.express as px
-import inspect
-import pandas as pd
-import inspect
-import json
-import os
-import plotly.express as px
-import re
-from pprint import pprint
 
-import os, sys
+agg_functions = {
+    "int64": {
+        "title": "Integer",
+        "input_methods": {
+            "Slider" : {
+                "mantine": dmc.Slider,
+                "description": "Single value slider",
+            },
+            "RangeSlider" : {
+                "mantine": dmc.RangeSlider,
+                "description": "Two values slider",
+            },
+        },
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "unique": {
+                "pandas": "nunique",
+                "numpy": None,
+                "description": "Number of distinct elements",
+            },
+            "sum": {
+                "pandas": "sum",
+                "numpy": "sum",
+                "description": "Sum of non-NA values",
+            },
+            "average": {
+                "pandas": "mean",
+                "numpy": "mean",
+                "description": "Mean of non-NA values",
+            },
+            "median": {
+                "pandas": "median",
+                "numpy": "median",
+                "description": "Arithmetic median of non-NA values",
+            },
+            "min": {
+                "pandas": "min",
+                "numpy": "min",
+                "description": "Minimum of non-NA values",
+            },
+            "max": {
+                "pandas": "max",
+                "numpy": "max",
+                "description": "Maximum of non-NA values",
+            },
+            "range": {
+                "pandas": lambda df: df.max() - df.min(),
+                "numpy": "ptp",
+                "description": "Range of non-NA values",
+            },
+            "variance": {
+                "pandas": "var",
+                "numpy": "var",
+                "description": "Variance of non-NA values",
+            },
+            "std_dev": {
+                "pandas": "std",
+                "numpy": "std",
+                "description": "Standard Deviation of non-NA values",
+            },
+            "percentile": {
+                "pandas": "quantile",
+                "numpy": "percentile",
+                "description": "Percentiles of non-NA values",
+            },
+            "skewness": {
+                "pandas": "skew",
+                "numpy": None,
+                "description": "Skewness of non-NA values",
+            },
+            "kurtosis": {
+                "pandas": "kurt",
+                "numpy": None,
+                "description": "Kurtosis of non-NA values",
+            },
+            "cumulative_sum": {
+                "pandas": "cumsum",
+                "numpy": "cumsum",
+                "description": "Cumulative sum of non-NA values",
+            },
+        },
+    },
+    "float64": {
+        "title": "Floating Point",
+        "input_methods": {
+            "Slider" : {
+                "mantine": dmc.Slider,
+                "description": "Single value slider",
+            },
+            "RangeSlider" : {
+                "mantine": dmc.RangeSlider,
+                "description": "Two values slider",
+            },
+        },
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "unique": {
+                "pandas": "nunique",
+                "numpy": None,
+                "description": "Number of distinct elements",
+            },
+            "sum": {
+                "pandas": "sum",
+                "numpy": "sum",
+                "description": "Sum of non-NA values",
+            },
+            "average": {
+                "pandas": "mean",
+                "numpy": "mean",
+                "description": "Mean of non-NA values",
+            },
+            "median": {
+                "pandas": "median",
+                "numpy": "median",
+                "description": "Arithmetic median of non-NA values",
+            },
+            "min": {
+                "pandas": "min",
+                "numpy": "min",
+                "description": "Minimum of non-NA values",
+            },
+            "max": {
+                "pandas": "max",
+                "numpy": "max",
+                "description": "Maximum of non-NA values",
+            },
+            "range": {
+                "pandas": lambda df: df.max() - df.min(),
+                "numpy": "ptp",
+                "description": "Range of non-NA values",
+            },
+            "variance": {
+                "pandas": "var",
+                "numpy": "var",
+                "description": "Variance of non-NA values",
+            },
+            "std_dev": {
+                "pandas": "std",
+                "numpy": "std",
+                "description": "Standard Deviation of non-NA values",
+            },
+            "percentile": {
+                "pandas": "quantile",
+                "numpy": "percentile",
+                "description": "Percentiles of non-NA values",
+            },
+            "skewness": {
+                "pandas": "skew",
+                "numpy": None,
+                "description": "Skewness of non-NA values",
+            },
+            "kurtosis": {
+                "pandas": "kurt",
+                "numpy": None,
+                "description": "Kurtosis of non-NA values",
+            },
+            "cumulative_sum": {
+                "pandas": "cumsum",
+                "numpy": "cumsum",
+                "description": "Cumulative sum of non-NA values",
+            },
+        },
+    },
+    "bool": {
+        "title": "Boolean",
+        "description": "Boolean values",
+        "input_methods": {
+            "Checkbox" : {
+                "mantine": dmc.Checkbox,
+                "description": "Checkbox",
+            },
+            "Switch" : {
+                "mantine": dmc.Switch,
+                "description": "Switch",
+            },
+        },
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "sum": {
+                "pandas": "sum",
+                "numpy": "sum",
+                "description": "Sum of non-NA values",
+            },
+            "min": {
+                "pandas": "min",
+                "numpy": "min",
+                "description": "Minimum of non-NA values",
+            },
+            "max": {
+                "pandas": "max",
+                "numpy": "max",
+                "description": "Maximum of non-NA values",
+            },
+        },
+    },
+    "datetime": {
+        "title": "Datetime",
+        "description": "Date and time values",
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "min": {
+                "pandas": "min",
+                "numpy": "min",
+                "description": "Minimum of non-NA values",
+            },
+            "max": {
+                "pandas": "max",
+                "numpy": "max",
+                "description": "Maximum of non-NA values",
+            },
+        },
+    },
+    "timedelta": {
+        "title": "Timedelta",
+        "description": "Differences between two datetimes",
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "sum": {
+                "pandas": "sum",
+                "numpy": "sum",
+                "description": "Sum of non-NA values",
+            },
+            "min": {
+                "pandas": "min",
+                "numpy": "min",
+                "description": "Minimum of non-NA values",
+            },
+            "max": {
+                "pandas": "max",
+                "numpy": "max",
+                "description": "Maximum of non-NA values",
+            },
+        },
+    },
+    "category": {
+        "title": "Category",
+        "description": "Finite list of text values",
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "mode": {
+                "pandas": "mode",
+                "numpy": None,
+                "description": "Most common value",
+            },
+        },
+    },
+    "object": {
+        "title": "Object",
+        "input_methods": {
+            "TextInput" : {
+                "mantine": dmc.TextInput,
+                "description": "Text input box",
+            },
+            "Select" : {
+                "mantine": dmc.Select,
+                "description": "Select",
+            },
+            "MultiSelect" : {
+                "mantine": dmc.MultiSelect,
+                "description": "MultiSelect",
+            },
+            "SegmentedControl" : {
+                "mantine": dmc.SegmentedControl,
+                "description": "SegmentedControl",
+            },
+        },
+        "description": "Text or mixed numeric or non-numeric values",
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "mode": {
+                "pandas": "mode",
+                "numpy": None,
+                "description": "Most common value",
+            },
+            "nunique": {
+                "pandas": "nunique",
+                "numpy": None,
+                "description": "Number of distinct elements",
+            },
+        },
+    },
+}
 
 
 def get_common_params(plotly_vizu_list):
@@ -346,21 +641,23 @@ def add_new_div(n, children, layouts):
                             "justify-content": "center",
                             "align-items": "center",
                             "flex-direction": "column",
+                            "height": "100%",
+                            "width": "100%",
                         },
                     ),
                 ],
                 is_open=True,
                 size="xl",
                 backdrop=False,
+                style={
+                    "height": "100%",
+                    "width": "100%",
+                    # "display": "flex",
+                    # "flex-direction": "column",
+                    # "flex-grow": "0",
+                },
             ),
         ],
-        style={
-            "height": "100%",
-            "width": "100%",
-            "display": "flex",
-            "flex-direction": "column",
-            "flex-grow": "0",
-        },
         id=new_plot_id,
     )
 
@@ -616,9 +913,16 @@ def get_values_to_generate_kwargs(*args):
                 elem["props"]["id"]["type"].replace("tmp-", ""): elem["props"]["value"]
                 for elem in accordion_secondary_common_params
             }
-            if not {k: v for k, v in accordion_secondary_common_params_args.items() if v is not None}:
-                accordion_secondary_common_params_args = {**accordion_secondary_common_params_args, **existing_kwargs}
-            print(accordion_secondary_common_params)
+            if not {
+                k: v
+                for k, v in accordion_secondary_common_params_args.items()
+                if v is not None
+            }:
+                accordion_secondary_common_params_args = {
+                    **accordion_secondary_common_params_args,
+                    **existing_kwargs,
+                }
+            # print(accordion_secondary_common_params)
             return accordion_secondary_common_params_args
         else:
             return existing_kwargs
@@ -680,7 +984,6 @@ def update_modal(n_clicks, ids):
                     x=df.columns[0], y=df.columns[1], color=df.columns[2]
                 )
 
-
                 figure = plot_func(
                     df,
                     **plot_kwargs,
@@ -732,7 +1035,11 @@ def update_modal(n_clicks, ids):
                         n_clicks=0,
                         style={"display": "block"},
                     ),
-                    dcc.Store(id={"type": "dict_kwargs", "index": id["index"]}, data=plot_kwargs, storage_type="session"),
+                    dcc.Store(
+                        id={"type": "dict_kwargs", "index": id["index"]},
+                        data=plot_kwargs,
+                        storage_type="session",
+                    ),
                 ]
             elif id["value"] == "Card":
                 print("Card")
@@ -740,108 +1047,361 @@ def update_modal(n_clicks, ids):
                     dbc.Row(
                         [
                             dbc.Col(
-                                dbc.Card(
-                                    dbc.CardBody(
-                                        [
-                                            dmc.TextInput(
-                                                label="Card title",
-                                                id={
-                                                    "type": "card-input",
-                                                    "index": id["index"],
-                                                },
-                                            ),
-                                            dmc.Select(
-                                                label="Select your column",
-                                                id={
-                                                    "type": "card-dropdown-column",
-                                                    "index": id["index"],
-                                                },
-                                                data=[
-                                                    {"label": e, "value": e}
-                                                    for e in df.columns
-                                                ],
-                                                value=None,
-                                            ),
-                                            dmc.Select(
-                                                label="Select your aggregation method",
-                                                id={
-                                                    "type": "card-dropdown-aggregation",
-                                                    "index": id["index"],
-                                                },
-                                                data=[
-                                                    {"label": e, "value": e}
-                                                    for e in [
-                                                        "average",
-                                                        "median",
-                                                        "sum",
-                                                    ]
-                                                ],
-                                                value=None,
-                                            ),
-                                        ],
+                                [
+                                    html.H5("Card edit menu"),
+                                    dbc.Card(
+                                        dbc.CardBody(
+                                            [
+                                                dmc.TextInput(
+                                                    label="Card title",
+                                                    id={
+                                                        "type": "card-input",
+                                                        "index": id["index"],
+                                                    },
+                                                ),
+                                                dmc.Select(
+                                                    label="Select your column",
+                                                    id={
+                                                        "type": "card-dropdown-column",
+                                                        "index": id["index"],
+                                                    },
+                                                    data=[
+                                                        {"label": e, "value": e}
+                                                        for e in df.columns
+                                                    ],
+                                                    value=None,
+                                                ),
+                                                dmc.Select(
+                                                    label="Select your aggregation method",
+                                                    id={
+                                                        "type": "card-dropdown-aggregation",
+                                                        "index": id["index"],
+                                                    },
+                                                    value=None,
+                                                ),
+                                                html.Div(
+                                                    id={
+                                                        "type": "debug-print",
+                                                        "index": id["index"],
+                                                    },
+                                                ),
+                                            ],
+                                        ),
+                                        id={
+                                            "type": "card",
+                                            "index": id["index"],
+                                        },
                                     ),
-                                ),
+                                ],
                                 width="auto",
                             ),
                             dbc.Col(
-                                dbc.Card(
-                                    dbc.CardBody(
-                                        id={"type": "card-body", "index": id["index"]}
-                                    )
-                                ),
+                                [
+                                    html.H5("Resulting card"),
+                                    dbc.Card(
+                                        dbc.CardBody(
+                                            id={
+                                                "type": "card-body",
+                                                "index": id["index"],
+                                            }
+                                        )
+                                    ),
+                                ],
                                 width="auto",
                             ),
                         ]
                     ),
-                    html.Button(
-                        "Done",
-                        id={"type": "btn-done", "index": id["index"]},
-                        n_clicks=0,
-                        style={"display": "block"},
+                    html.Hr(),
+                    dbc.Row(
+                        dmc.Button(
+                            "Done",
+                            id={"type": "btn-done", "index": id["index"]},
+                            n_clicks=0,
+                            style={"display": "block"},
+                        )
                     ),
                 ]
             elif id["value"] == "Interactive":
+                print("Interactive")
                 return [
                     dbc.Row(
                         [
                             dbc.Col(
-                                dcc.Input(
-                                    # id="input-box",
-                                    type="text",
-                                    id={"type": "input", "index": id["index"]},
-                                )
-                            )
+                                [
+                                    html.H5("Card edit menu"),
+                                    dbc.Card(
+                                        dbc.CardBody(
+                                            [
+                                                dmc.TextInput(
+                                                    label="Card title",
+                                                    id={
+                                                        "type": "input-title",
+                                                        "index": id["index"],
+                                                    },
+                                                ),
+                                                dmc.Select(
+                                                    label="Select your column",
+                                                    id={
+                                                        "type": "input-dropdown-column",
+                                                        "index": id["index"],
+                                                    },
+                                                    data=[
+                                                        {"label": e, "value": e}
+                                                        for e in df.columns
+                                                    ],
+                                                    value=None,
+                                                ),
+                                                dmc.Select(
+                                                    label="Select your aggregation method",
+                                                    id={
+                                                        "type": "input-dropdown-method",
+                                                        "index": id["index"],
+                                                    },
+                                                    value=None,
+                                                ),
+                                            ],
+                                        ),
+                                        id={
+                                            "type": "input",
+                                            "index": id["index"],
+                                        },
+                                    ),
+                                ],
+                                width="auto",
+                            ),
+                            dbc.Col(
+                                [
+                                    html.H5("Resulting card"),
+                                    dbc.Card(
+                                        dbc.CardBody(
+                                            id={
+                                                "type": "input-body",
+                                                "index": id["index"],
+                                            }
+                                        )
+                                    color="light",
+                                    ),
+                                ],
+                                width="auto",
+                            ),
                         ]
                     ),
-                    html.Button(
-                        "Done",
-                        id={"type": "btn-done", "index": id["index"]},
-                        n_clicks=0,
-                        style={"display": "block"},
+                    html.Hr(),
+                    dbc.Row(
+                        dmc.Button(
+                            "Done",
+                            id={"type": "btn-done", "index": id["index"]},
+                            n_clicks=0,
+                            style={"display": "block"},
+                        )
                     ),
                 ]
     return []
 
 
+# Callback to update aggregation dropdown options based on the selected column
 @app.callback(
-    Output({"type": "card-body", "index": MATCH}, "children"),
+    Output({"type": "input-dropdown-method", "index": MATCH}, "data"),
+    Input({"type": "input-dropdown-column", "index": MATCH}, "value"),
+    prevent_initial_call=True,
+)
+def update_aggregation_options(column_value):
+    if column_value is None:
+        return []
+
+    # Get the type of the selected column
+    column_type = df[column_value].dtype
+    print(column_value, column_type, type(column_type))
+
+    if column_type in ["object", "category"]:
+        nb_unique = df[column_value].nunique()
+    else:
+        nb_unique = 0
+
+    # Get the aggregation functions available for the selected column type
+    agg_functions_tmp_methods = agg_functions[str(column_type)]["input_methods"]
+    print(agg_functions_tmp_methods)
+
+    # Create a list of options for the dropdown
+    options = [{"label": k, "value": k} for k in agg_functions_tmp_methods.keys()]
+    print(options)
+
+    if nb_unique > 5:
+        options = [e for e in options if e["label"] != "SegmentedControl"]
+
+    return options
+
+
+# Callback to reset aggregation dropdown value based on the selected column
+@app.callback(
+    Output({"type": "input-dropdown-method", "index": MATCH}, "value"),
+    Input({"type": "input-dropdown-column", "index": MATCH}, "value"),
+    prevent_initial_call=True,
+)
+def reset_aggregation_value(column_value):
+    return None
+
+
+# Callback to update card body based on the selected column and aggregation
+@app.callback(
+    Output({"type": "input-body", "index": MATCH}, "children"),
     [
-        Input({"type": "card-input", "index": MATCH}, "value"),
-        Input({"type": "card-dropdown-column", "index": MATCH}, "value"),
-        Input({"type": "card-dropdown-aggregation", "index": MATCH}, "value"),
+        Input({"type": "input-title", "index": MATCH}, "value"),
+        Input({"type": "input-dropdown-column", "index": MATCH}, "value"),
+        Input({"type": "input-dropdown-method", "index": MATCH}, "value"),
+        # Input("interval", "n_intervals"),
     ],
     prevent_initial_call=True,
 )
 def update_card_body(input_value, column_value, aggregation_value):
     if input_value is None or column_value is None or aggregation_value is None:
         return []
-    # This function is called whenever the input_value or dropdown_value changes
-    # Do something with input_value and dropdown_value to generate new card_body
-    v = df[column_value].nunique(aggregation_value)
+
+    # Get the type of the selected column
+    column_type = str(df[column_value].dtype)
+
+    # Get the pandas function for the selected aggregation
+    func_name = agg_functions[column_type]["input_methods"][aggregation_value]["mantine"]
+    print(func_name)
+
+    # if callable(func_name):
+    #     # If the function is a lambda function
+    #     v = func_name(df[column_value])
+    # else:
+    #     # If the function is a pandas function
+    #     v = getattr(df[column_value], func_name)()
+    #     print(v, type(v))
+    #     if type(v) is pd.core.series.Series and func_name != "mode":
+    #         v = v.iloc[0]
+    #     elif type(v) is pd.core.series.Series and func_name == "mode":
+    #         if v.shape[0] == df[column_value].nunique():
+    #             v = "All values are represented equally"
+    #         else:
+    #             v = v.iloc[0]
+
+    # if type(v) is np.float64:
+    #     v = round(v, 2)
+        # v = "{:,.2f}".format(round(v, 2))
+        # v = "{:,.2f}".format(round(v, 2)).replace(",", " ")
+
+    card_title = html.H5(f"{input_value}")
+
+    if aggregation_value  in  ["Select", "MultiSelect", "SegmentedControl"]:
+        data = df[column_value].unique()
+
+        new_card_body = [card_title, func_name(data=data)]
+        print(new_card_body)
+
+        return new_card_body
+
+    elif aggregation_value in ["Slider", "RangeSlider"]:
+        min_value = df[column_value].min()
+        max_value = df[column_value].max()
+        new_card_body = [card_title, func_name(min=min_value, max=max_value)]
+        print(new_card_body)
+        return new_card_body
+
+# Callback to update aggregation dropdown options based on the selected column
+@app.callback(
+    Output({"type": "card-dropdown-aggregation", "index": MATCH}, "data"),
+    Input({"type": "card-dropdown-column", "index": MATCH}, "value"),
+    prevent_initial_call=True,
+)
+def update_aggregation_options(column_value):
+    if column_value is None:
+        return []
+
+    # Get the type of the selected column
+    column_type = df[column_value].dtype
+    print(column_value, column_type, type(column_type))
+
+    # Get the aggregation functions available for the selected column type
+    agg_functions_tmp_methods = agg_functions[str(column_type)]["card_methods"]
+    print(agg_functions_tmp_methods)
+
+    # Create a list of options for the dropdown
+    options = [{"label": k, "value": k} for k in agg_functions_tmp_methods.keys()]
+    print(options)
+
+    return options
+
+
+# Callback to reset aggregation dropdown value based on the selected column
+@app.callback(
+    Output({"type": "card-dropdown-aggregation", "index": MATCH}, "value"),
+    Input({"type": "card-dropdown-column", "index": MATCH}, "value"),
+    prevent_initial_call=True,
+)
+def reset_aggregation_value(column_value):
+    return None
+
+
+# Callback to update card body based on the selected column and aggregation
+@app.callback(
+    Output({"type": "card-body", "index": MATCH}, "children"),
+    [
+        Input({"type": "card-input", "index": MATCH}, "value"),
+        Input({"type": "card-dropdown-column", "index": MATCH}, "value"),
+        Input({"type": "card-dropdown-aggregation", "index": MATCH}, "value"),
+        # Input("interval", "n_intervals"),
+    ],
+    prevent_initial_call=True,
+)
+def update_card_body(input_value, column_value, aggregation_value):
+    if input_value is None or column_value is None or aggregation_value is None:
+        return []
+
+    # Get the type of the selected column
+    column_type = str(df[column_value].dtype)
+
+    # Get the pandas function for the selected aggregation
+    func_name = agg_functions[column_type]["card_methods"][aggregation_value]["pandas"]
+
+    if callable(func_name):
+        # If the function is a lambda function
+        v = func_name(df[column_value])
+    else:
+        # If the function is a pandas function
+        v = getattr(df[column_value], func_name)()
+        print(v, type(v))
+        if type(v) is pd.core.series.Series and func_name != "mode":
+            v = v.iloc[0]
+        elif type(v) is pd.core.series.Series and func_name == "mode":
+            if v.shape[0] == df[column_value].nunique():
+                v = "All values are represented equally"
+            else:
+                v = v.iloc[0]
+
+    if type(v) is np.float64:
+        v = round(v, 2)
+        # v = "{:,.2f}".format(round(v, 2))
+        # v = "{:,.2f}".format(round(v, 2)).replace(",", " ")
+
+
     new_card_body = [html.H5(f"{input_value}"), html.P(f"{v}")]
 
-    # You can return anything you want here, as long as it's a valid Dash component or a list of Dash components
     return new_card_body
+
+
+def find_ids_recursive(dash_component):
+    """
+    Recursively search for ids in the properties of a Dash component.
+    :param dash_component: The Dash component to search in
+    :return: A list of all ids found
+    """
+    if isinstance(dash_component, dict) and "props" in dash_component:
+        # print(f"Inspecting {dash_component.get('type')}")
+        if "id" in dash_component["props"]:
+            id = dash_component["props"]["id"]
+            # print(f"Found id: {id}")
+            yield id
+        if "children" in dash_component["props"]:
+            children = dash_component["props"]["children"]
+            if isinstance(children, list):
+                for child in children:
+                    yield from find_ids_recursive(child)
+            elif isinstance(children, dict):
+                yield from find_ids_recursive(children)
 
 
 @app.callback(
@@ -860,29 +1420,67 @@ def update_button(n_clicks, children, btn_id):
     print(n_clicks, btn_id)
     print("\n")
 
-    if n_clicks > 0:
-        # print(children)
-        # figure = children[0]["props"]["children"][0]["props"]["children"]["props"]["figure"]
-        # print(children)
-        child = children[0]["props"]["children"][0]["props"]["children"] # Figure
-        # child = children[0]["props"]["children"][1]["props"]["children"] # Card
-        # print(list(child["props"].keys()))
-        # print(child_id)
-        # child = children[0]["props"]["children"][0]["props"]["children"]["props"]["children"]
-        # print(child)  
-        # if child["props"]["type"] is not "Card":
-        child["props"]["id"]["type"] = "updated-" + child["props"]["id"]["type"] # Figure
-        # else:
-        #     child["props"]["children"]["type"] = (
-        #         "updated-" + child["props"]["id"]["type"]
-        #     )
+    # print(f"Inspecting children:")
+    box_type = [sub_e for e in children for sub_e in list(find_ids_recursive(e))][0][
+        "type"
+    ]
+    print(box_type)
+    # print(f"Found ids: {all_ids}")
 
-        # print(child)
-        # # print(figure)
+    if box_type == "graph":
+        child = children[0]["props"]["children"][0]["props"]["children"]  # Figure
+        child["props"]["id"]["type"] = (
+            "updated-" + child["props"]["id"]["type"]
+        )  # Figure
+
+        print("OK")
         return child
-        # return dcc.Graph(
-        #     figure=figure, id={"type": "graph", "index": btn_id["index"]}
-        # )
+    elif box_type == "card":
+        print(children)
+        child = children[0]["props"]["children"][1]["props"]["children"][1]  # Card
+        print(child)
+        child["props"]["children"]["props"]["id"]["type"] = (
+            "updated-" + child["props"]["children"]["props"]["id"]["type"]
+        )  # Figure
+        return child
+    elif box_type == "input":
+        print(children)
+        child = children[0]["props"]["children"][1]["props"]["children"][1]  # Card
+        print(child)
+        child["props"]["children"]["props"]["id"]["type"] = (
+            "updated-" + child["props"]["children"]["props"]["id"]["type"]
+        )  # Figure
+        return child
+    # elif box_type == "input":
+    #     child = children[0]["props"]["children"][1]["props"]["children"] # Card
+    #     print(child)
+    #     child["props"]["children"]["props"]["id"]["type"] = "updated-" + child["props"]["children"]["props"]["id"]["type"] # Figure
+    #     return child
+
+    else:
+        return html.Div()
+
+    # print("\nEND")
+
+    # if n_clicks > 0:
+    #     # print(children)
+    #     # figure = children[0]["props"]["children"][0]["props"]["children"]["props"]["figure"]
+    #     # print(children)
+    #     # print(list(child["props"].keys()))
+    #     # print(child_id)
+    #     # child = children[0]["props"]["children"][0]["props"]["children"]["props"]["children"]
+    #     # print(child)
+    #     # if child["props"]["type"] is not "Card":
+    #     # else:
+    #     #     child["props"]["children"]["type"] = (
+    #     #         "updated-" + child["props"]["id"]["type"]
+    #     #     )
+
+    #     # print(child)
+    #     # # print(figure)
+    #     # return dcc.Graph(
+    #     #     figure=figure, id={"type": "graph", "index": btn_id["index"]}
+    #     # )
 
 
 if __name__ == "__main__":
