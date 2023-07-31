@@ -9,6 +9,8 @@ import inspect
 import pandas as pd
 import plotly.express as px
 import re
+from dash_iconify import DashIconify
+
 
 external_stylesheets = [
     dbc.themes.BOOTSTRAP,
@@ -684,17 +686,21 @@ def add_new_div(n, children, layouts):
     [
         Output({"type": "collapse", "index": MATCH}, "children"),
     ],
-    [Input({"type": "edit-button", "index": MATCH}, "n_clicks")],
+    [
+        Input({"type": "edit-button", "index": MATCH}, "n_clicks"),
+        Input({"type": "segmented-control-visu-graph", "index": MATCH}, "value"),
+    ],
     [State({"type": "edit-button", "index": MATCH}, "id")],
     # prevent_initial_call=True,
 )
-def update_specific_params(n_clicks, edit_button_id):
+def update_specific_params(n_clicks, visu_type, edit_button_id):
     print("update_specific_params")
     # print(app._callback_list)
 
     print(n_clicks, edit_button_id)
 
-    value = "scatter"
+    value = visu_type.lower()
+    # value = "scatter"
     if value is not None:
         specific_params_options = [
             {"label": param_name, "value": param_name}
@@ -831,7 +837,8 @@ def update_specific_params(n_clicks, edit_button_id):
                         ),
                     ],
                     title="Base parameters",
-                )
+                ),
+                start_collapsed=True,
             )
         ]
 
@@ -849,7 +856,8 @@ def update_specific_params(n_clicks, edit_button_id):
                         ),
                     ],
                     title="Common parameters",
-                )
+                ),
+                start_collapsed=True,
             )
         ]
         dynamic_specific_params_layout = [
@@ -866,7 +874,8 @@ def update_specific_params(n_clicks, edit_button_id):
                         ),
                     ],
                     title=f"{value.capitalize()} specific parameters",
-                )
+                ),
+                start_collapsed=True,
             )
         ]
         return [
@@ -938,6 +947,8 @@ def get_values_to_generate_kwargs(*args):
     print("\n")
 
     children = args[0]
+    # visu_type = args[1]
+    # print(children)
     existing_kwargs = args[-1]
 
     accordion_primary_common_params_args = dict()
@@ -967,8 +978,8 @@ def get_values_to_generate_kwargs(*args):
                 for elem in accordion_primary_common_params
             }
 
-            print(accordion_primary_common_params_args)
-            print(accordion_primary_common_params)
+            # print(accordion_primary_common_params_args)
+            # print(accordion_primary_common_params)
 
             # print(accordion_secondary_common_params)
             # return accordion_secondary_common_params_args
@@ -988,7 +999,7 @@ def get_values_to_generate_kwargs(*args):
                 elem["props"]["id"]["type"].replace("tmp-", ""): elem["props"]["value"]
                 for elem in accordion_secondary_common_params
             }
-            print(accordion_secondary_common_params_args)
+            # print(accordion_secondary_common_params_args)
             # if not {
             #     k: v
             #     for k, v in accordion_secondary_common_params_args.items()
@@ -1017,7 +1028,7 @@ def get_values_to_generate_kwargs(*args):
                 elem["props"]["id"]["type"].replace("tmp-", ""): elem["props"]["value"]
                 for elem in specific_params
             }
-            print(specific_params_args)
+            # print(specific_params_args)
 
         return_dict = dict(
             **specific_params_args,
@@ -1034,12 +1045,13 @@ def get_values_to_generate_kwargs(*args):
             print("BLANK DICT, ROLLBACK TO EXISTING KWARGS")
             print(return_dict)
 
-        print(return_dict)
-
         if return_dict:
+            print("RETURNING DICT")
+            print(return_dict)
             # print(accordion_secondary_common_params)
             return return_dict
         else:
+            print("EXISTING KWARGS")
             return existing_kwargs
 
         # else:
@@ -1054,6 +1066,7 @@ def get_values_to_generate_kwargs(*args):
     Output({"type": "graph", "index": MATCH}, "figure"),
     [
         Input({"type": "dict_kwargs", "index": MATCH}, "value"),
+        Input({"type": "segmented-control-visu-graph", "index": MATCH}, "value"),
         [
             Input({"type": f"tmp-{e}", "index": MATCH}, "children")
             for e in secondary_common_params_lite
@@ -1064,15 +1077,21 @@ def get_values_to_generate_kwargs(*args):
 )
 def update_figure(*args):
     dict_kwargs = args[0]
+    visu_type = args[1]
     print("update figure")
     print(dict_kwargs)
+    print(visu_type)
     # # print(app._callback_list)
 
     # print(dict_kwargs)
     dict_kwargs = {k: v for k, v in dict_kwargs.items() if v is not None}
     print(dict_kwargs)
     if dict_kwargs:
-        figure = px.scatter(df, **dict_kwargs)
+        figure = plotly_vizu_dict[visu_type.lower()](df, **dict_kwargs)
+        # figure = px.scatter(df, **dict_kwargs)
+        # print(figure)
+        figure.update_layout(uirevision=1)
+
         return figure
     print("\n")
 
@@ -1092,39 +1111,102 @@ def update_modal(n_clicks, ids):
     print(n_clicks, ids)
     print("\n")
 
-    visualization_type = "scatter"
+    import plotly.graph_objects as go
+
+    # visualization_type = "scatter"
     for n, id in zip(n_clicks, ids):
         print(n, id)
         if n > 0:
             if id["value"] == "Figure":
-                plot_func = plotly_vizu_dict[visualization_type]
-                plot_kwargs = dict(
-                    x=df.columns[0], y=df.columns[1], color=df.columns[2]
-                )
+                # plot_func = plotly_vizu_dict[visualization_type]
+                # plot_kwargs = dict(
+                #     x=df.columns[0], y=df.columns[1], color=df.columns[2]
+                # )
+                plot_kwargs = dict()
 
-                figure = plot_func(
-                    df,
-                    **plot_kwargs,
-                )
-                figure.update_layout(uirevision=1)
+                figure = go.Figure()
+
+                # figure = plot_func(
+                #     df,
+                #     **plot_kwargs,
+                # )
 
                 return [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dmc.Select(
+                                    label=html.H4(
+                                        [
+                                            DashIconify(
+                                                icon="flat-color-icons:workflow"
+                                            ),
+                                            "Workflow selection",
+                                        ]
+                                    ),
+                                    data=["Test1", "Test2"],
+                                )
+                            ),
+                            dbc.Col(
+                                dmc.Select(
+                                    label=html.H4(
+                                        [
+                                            DashIconify(icon="bxs:data"),
+                                            "Data collection selection",
+                                        ]
+                                    ),
+                                    data=["Test3", "Test4"],
+                                )
+                            ),
+                        ],
+                        style={"width": "80%"},
+                    ),
+                    html.Br(),
+                    # html.Hr(),
+                    dbc.Row(
+                        [
+                            html.H5("Select your visualisation type"),
+                            dmc.SegmentedControl(
+                                data=[
+                                    e.capitalize()
+                                    for e in sorted(plotly_vizu_dict.keys())
+                                ],
+                                orientation="horizontal",
+                                size="lg",
+                                radius="lg",
+                                id={
+                                    "type": "segmented-control-visu-graph",
+                                    "index": id["index"],
+                                },
+                                persistence=True,
+                                persistence_type="session",
+                                value=[
+                                    e.capitalize()
+                                    for e in sorted(plotly_vizu_dict.keys())
+                                ][-1],
+                            ),
+                        ],
+                        style={"height": "5%"},
+                    ),
+                    html.Br(),
                     dbc.Row(
                         [
                             dbc.Col(
                                 dcc.Graph(
                                     figure=figure,
                                     id={"type": "graph", "index": id["index"]},
+                                    config={"editable": True},
                                 ),
                                 width="auto",
                             ),
                             # dbc.Col(width=0.5),
                             dbc.Col(
                                 [
+                                    html.Br(),
                                     html.Div(
                                         children=[
                                             dmc.Button(
-                                                "Edit",
+                                                "Edit figure",
                                                 id={
                                                     "type": "edit-button",
                                                     "index": id["index"],
@@ -1142,14 +1224,14 @@ def update_modal(n_clicks, ids):
                                                 is_open=False,
                                             ),
                                         ]
-                                    )
+                                    ),
                                 ],
                                 width="auto",
                                 style={"align": "center"},
                             ),
                         ]
                     ),
-                    html.Hr(),
+                    html.Br(),
                     dmc.Button(
                         "Done",
                         id={"type": "btn-done", "index": id["index"]},
@@ -1165,6 +1247,36 @@ def update_modal(n_clicks, ids):
             elif id["value"] == "Card":
                 print("Card")
                 return [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dmc.Select(
+                                    label=html.H4(
+                                        [
+                                            DashIconify(
+                                                icon="flat-color-icons:workflow"
+                                            ),
+                                            "Workflow selection",
+                                        ]
+                                    ),
+                                    data=["Test1", "Test2"],
+                                )
+                            ),
+                            dbc.Col(
+                                dmc.Select(
+                                    label=html.H4(
+                                        [
+                                            DashIconify(icon="bxs:data"),
+                                            "Data collection selection",
+                                        ]
+                                    ),
+                                    data=["Test3", "Test4"],
+                                )
+                            ),
+                        ],
+                        style={"width": "80%"},
+                    ),
+                    html.Br(),
                     dbc.Row(
                         [
                             dbc.Col(
@@ -1247,6 +1359,36 @@ def update_modal(n_clicks, ids):
             elif id["value"] == "Interactive":
                 print("Interactive")
                 return [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                dmc.Select(
+                                    label=html.H4(
+                                        [
+                                            DashIconify(
+                                                icon="flat-color-icons:workflow"
+                                            ),
+                                            "Workflow selection",
+                                        ]
+                                    ),
+                                    data=["Test1", "Test2"],
+                                )
+                            ),
+                            dbc.Col(
+                                dmc.Select(
+                                    label=html.H4(
+                                        [
+                                            DashIconify(icon="bxs:data"),
+                                            "Data collection selection",
+                                        ]
+                                    ),
+                                    data=["Test3", "Test4"],
+                                )
+                            ),
+                        ],
+                        style={"width": "80%"},
+                    ),
+                    html.Br(),
                     dbc.Row(
                         [
                             dbc.Col(
@@ -1556,39 +1698,49 @@ def find_ids_recursive(dash_component):
         State({"type": "modal-body", "index": MATCH}, "children"),
         State({"type": "btn-done", "index": MATCH}, "id"),
     ],
-    prevent_initial_call=True,
+    # prevent_initial_call=True,
 )
 def update_button(n_clicks, children, btn_id):
     print("update_button")
     print(n_clicks, btn_id)
+    print([sub_e for e in children for sub_e in list(find_ids_recursive(e))])
     print("\n")
 
     # print(f"Inspecting children:")
     box_type = [sub_e for e in children for sub_e in list(find_ids_recursive(e))][0][
         "type"
     ]
+    # print(children)
     print(box_type)
     # print(f"Found ids: {all_ids}")
 
-    if box_type == "graph":
-        child = children[0]["props"]["children"][0]["props"]["children"]  # Figure
+    div_index = 4 if box_type == "segmented-control-visu-graph" else 2
+    if box_type == "segmented-control-visu-graph":
+        child = children[div_index]["props"]["children"][0]["props"][
+            "children"
+        ]  # Figure
         child["props"]["id"]["type"] = (
             "updated-" + child["props"]["id"]["type"]
         )  # Figure
 
+        print(child)
         print("OK")
         return child
     elif box_type == "card":
-        print(children)
-        child = children[0]["props"]["children"][1]["props"]["children"][1]  # Card
+        # print(children)
+        child = children[div_index]["props"]["children"][1]["props"]["children"][
+            1
+        ]  # Card
         print(child)
         child["props"]["children"]["props"]["id"]["type"] = (
             "updated-" + child["props"]["children"]["props"]["id"]["type"]
         )  # Figure
         return child
     elif box_type == "input":
-        print(children)
-        child = children[0]["props"]["children"][1]["props"]["children"][1]  # Card
+        # print(children)
+        child = children[div_index]["props"]["children"][1]["props"]["children"][
+            1
+        ]  # Card
         print(child)
         child["props"]["children"]["props"]["id"]["type"] = (
             "updated-" + child["props"]["children"]["props"]["id"]["type"]
