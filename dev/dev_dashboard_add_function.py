@@ -33,12 +33,12 @@ agg_functions = {
     "int64": {
         "title": "Integer",
         "input_methods": {
-            "Slider" : {
-                "mantine": dmc.Slider,
+            "Slider": {
+                "component": dcc.Slider,
                 "description": "Single value slider",
             },
-            "RangeSlider" : {
-                "mantine": dmc.RangeSlider,
+            "RangeSlider": {
+                "component": dcc.RangeSlider,
                 "description": "Two values slider",
             },
         },
@@ -118,12 +118,12 @@ agg_functions = {
     "float64": {
         "title": "Floating Point",
         "input_methods": {
-            "Slider" : {
-                "mantine": dmc.Slider,
+            "Slider": {
+                "component": dcc.Slider,
                 "description": "Single value slider",
             },
-            "RangeSlider" : {
-                "mantine": dmc.RangeSlider,
+            "RangeSlider": {
+                "component": dcc.RangeSlider,
                 "description": "Two values slider",
             },
         },
@@ -204,12 +204,12 @@ agg_functions = {
         "title": "Boolean",
         "description": "Boolean values",
         "input_methods": {
-            "Checkbox" : {
-                "mantine": dmc.Checkbox,
+            "Checkbox": {
+                "component": dmc.Checkbox,
                 "description": "Checkbox",
             },
-            "Switch" : {
-                "mantine": dmc.Switch,
+            "Switch": {
+                "component": dmc.Switch,
                 "description": "Switch",
             },
         },
@@ -302,20 +302,20 @@ agg_functions = {
     "object": {
         "title": "Object",
         "input_methods": {
-            "TextInput" : {
-                "mantine": dmc.TextInput,
+            "TextInput": {
+                "component": dmc.TextInput,
                 "description": "Text input box",
             },
-            "Select" : {
-                "mantine": dmc.Select,
+            "Select": {
+                "component": dmc.Select,
                 "description": "Select",
             },
-            "MultiSelect" : {
-                "mantine": dmc.MultiSelect,
+            "MultiSelect": {
+                "component": dmc.MultiSelect,
                 "description": "MultiSelect",
             },
-            "SegmentedControl" : {
-                "mantine": dmc.SegmentedControl,
+            "SegmentedControl": {
+                "component": dmc.SegmentedControl,
                 "description": "SegmentedControl",
             },
         },
@@ -467,7 +467,7 @@ param_info = get_param_info(plotly_vizu_list)
 dropdown_options = get_dropdown_options(df)
 
 # Define the elements for the dropdown menu
-dropdown_elements = ["x", "y", "color"]
+base_elements = ["x", "y", "color"]
 
 # Define allowed types and the corresponding Bootstrap components
 allowed_types = ["str", "int", "float", "boolean", "column"]
@@ -585,7 +585,7 @@ def add_new_div(n, children, layouts):
             dbc.Modal(
                 id={"type": "modal", "index": n},
                 children=[
-                    dbc.ModalHeader(html.H5("Chose your new component type")),
+                    dbc.ModalHeader(html.H5("Design your new dashboard component")),
                     dbc.ModalBody(
                         [
                             dbc.Row(
@@ -750,7 +750,9 @@ def update_specific_params(n_clicks, edit_button_id):
                 specific_params_dropdowns.append(accordion_item)
 
         secondary_common_params_dropdowns = list()
+        primary_common_params_dropdowns = list()
         for e in secondary_common_params:
+            print(e)
             processed_type_tmp = param_info[value][e]["processed_type"]
             # allowed_types = ["str", "int", "float", "column", "list"]
             allowed_types = ["str", "int", "float", "column"]
@@ -808,31 +810,70 @@ def update_specific_params(n_clicks, edit_button_id):
                     className="my-2",
                     title=e,
                 )
-                secondary_common_params_dropdowns.append(accordion_item)
+                if e not in base_elements:
+                    secondary_common_params_dropdowns.append(accordion_item)
+                else:
+                    primary_common_params_dropdowns.append(accordion_item)
 
-        secondary_common_params_layout = [html.H5("Common parameters")] + [
+        print(secondary_common_params_dropdowns)
+
+        primary_common_params_layout = [
             dbc.Accordion(
-                secondary_common_params_dropdowns,
-                flush=True,
-                always_open=True,
-                persistence_type="session",
-                persistence=True,
-                id="accordion-sec-common",
-            ),
+                dbc.AccordionItem(
+                    [
+                        dbc.Accordion(
+                            primary_common_params_dropdowns,
+                            flush=True,
+                            always_open=True,
+                            persistence_type="session",
+                            persistence=True,
+                            id="accordion-sec-common",
+                        ),
+                    ],
+                    title="Base parameters",
+                )
+            )
+        ]
+
+        secondary_common_params_layout = [
+            dbc.Accordion(
+                dbc.AccordionItem(
+                    [
+                        dbc.Accordion(
+                            secondary_common_params_dropdowns,
+                            flush=True,
+                            always_open=True,
+                            persistence_type="session",
+                            persistence=True,
+                            id="accordion-sec-common",
+                        ),
+                    ],
+                    title="Common parameters",
+                )
+            )
         ]
         dynamic_specific_params_layout = [
-            html.H5(f"{value.capitalize()} specific parameters")
-        ] + [
             dbc.Accordion(
-                specific_params_dropdowns,
-                flush=True,
-                always_open=True,
-                persistence_type="session",
-                persistence=True,
-                id="accordion",
-            ),
+                dbc.AccordionItem(
+                    [
+                        dbc.Accordion(
+                            specific_params_dropdowns,
+                            flush=True,
+                            always_open=True,
+                            persistence_type="session",
+                            persistence=True,
+                            id="accordion",
+                        ),
+                    ],
+                    title=f"{value.capitalize()} specific parameters",
+                )
+            )
         ]
-        return [secondary_common_params_layout + dynamic_specific_params_layout]
+        return [
+            primary_common_params_layout
+            + secondary_common_params_layout
+            + dynamic_specific_params_layout
+        ]
     else:
         return html.Div()
 
@@ -898,10 +939,44 @@ def get_values_to_generate_kwargs(*args):
 
     children = args[0]
     existing_kwargs = args[-1]
-    print(existing_kwargs)
+
+    accordion_primary_common_params_args = dict()
+    accordion_secondary_common_params_args = dict()
+    specific_params_args = dict()
+    # print(existing_kwargs)
+    # print(children)
+
+    # l[0]["props"]["children"]["props"]["children"][0]["props"]["children"][0]
 
     if children:
-        accordion_secondary_common_params = children[1]["props"]["children"]
+        # accordion_secondary_common_params = children[0]["props"]["children"]["props"]["children"]
+        accordion_primary_common_params = children[0]["props"]["children"]["props"][
+            "children"
+        ][0]["props"]["children"]
+
+        # accordion_secondary_common_params = children[1]["props"]["children"]
+        if accordion_primary_common_params:
+            print("TOTO")
+            accordion_primary_common_params = [
+                param["props"]["children"][0]["props"]["children"]
+                for param in accordion_primary_common_params
+            ]
+
+            accordion_primary_common_params_args = {
+                elem["props"]["id"]["type"].replace("tmp-", ""): elem["props"]["value"]
+                for elem in accordion_primary_common_params
+            }
+
+            print(accordion_primary_common_params_args)
+            print(accordion_primary_common_params)
+
+            # print(accordion_secondary_common_params)
+            # return accordion_secondary_common_params_args
+        accordion_secondary_common_params = children[1]["props"]["children"]["props"][
+            "children"
+        ][0]["props"]["children"]
+
+        # accordion_secondary_common_params = children[1]["props"]["children"]
         if accordion_secondary_common_params:
             print("TOTO")
             accordion_secondary_common_params = [
@@ -913,19 +988,62 @@ def get_values_to_generate_kwargs(*args):
                 elem["props"]["id"]["type"].replace("tmp-", ""): elem["props"]["value"]
                 for elem in accordion_secondary_common_params
             }
-            if not {
-                k: v
-                for k, v in accordion_secondary_common_params_args.items()
-                if v is not None
-            }:
-                accordion_secondary_common_params_args = {
-                    **accordion_secondary_common_params_args,
-                    **existing_kwargs,
-                }
+            print(accordion_secondary_common_params_args)
+            # if not {
+            #     k: v
+            #     for k, v in accordion_secondary_common_params_args.items()
+            #     if v is not None
+            # }:
+            #     accordion_secondary_common_params_args = {
+            #         **accordion_secondary_common_params_args,
+            #         **existing_kwargs,
+            #     }
+            # print(accordion_secondary_common_params_args)
             # print(accordion_secondary_common_params)
-            return accordion_secondary_common_params_args
+            # return accordion_secondary_common_params_args
+        specific_params = children[2]["props"]["children"]["props"]["children"][0][
+            "props"
+        ]["children"]
+
+        # accordion_secondary_common_params = children[1]["props"]["children"]
+        if specific_params:
+            print("specific_params")
+            specific_params = [
+                param["props"]["children"][0]["props"]["children"]
+                for param in specific_params
+            ]
+
+            specific_params_args = {
+                elem["props"]["id"]["type"].replace("tmp-", ""): elem["props"]["value"]
+                for elem in specific_params
+            }
+            print(specific_params_args)
+
+        return_dict = dict(
+            **specific_params_args,
+            **accordion_secondary_common_params_args,
+            **accordion_primary_common_params_args,
+        )
+        return_dict = {k: v for k, v in return_dict.items() if v is not None}
+
+        if not return_dict:
+            return_dict = {
+                **return_dict,
+                **existing_kwargs,
+            }
+            print("BLANK DICT, ROLLBACK TO EXISTING KWARGS")
+            print(return_dict)
+
+        print(return_dict)
+
+        if return_dict:
+            # print(accordion_secondary_common_params)
+            return return_dict
         else:
             return existing_kwargs
+
+        # else:
+        #     return existing_kwargs
     else:
         return existing_kwargs
 
@@ -1012,8 +1130,10 @@ def update_modal(n_clicks, ids):
                                                     "index": id["index"],
                                                 },
                                                 n_clicks=0,
-                                                size="lg",
+                                                # size="lg",
+                                                style={"align": "center"},
                                             ),
+                                            html.Hr(),
                                             dbc.Collapse(
                                                 id={
                                                     "type": "collapse",
@@ -1025,6 +1145,7 @@ def update_modal(n_clicks, ids):
                                     )
                                 ],
                                 width="auto",
+                                style={"align": "center"},
                             ),
                         ]
                     ),
@@ -1091,6 +1212,7 @@ def update_modal(n_clicks, ids):
                                             "type": "card",
                                             "index": id["index"],
                                         },
+                                        style={"width": "100%"},
                                     ),
                                 ],
                                 width="auto",
@@ -1104,7 +1226,8 @@ def update_modal(n_clicks, ids):
                                                 "type": "card-body",
                                                 "index": id["index"],
                                             }
-                                        )
+                                        ),
+                                        style={"width": "100%"},
                                     ),
                                 ],
                                 width="auto",
@@ -1152,7 +1275,7 @@ def update_modal(n_clicks, ids):
                                                     value=None,
                                                 ),
                                                 dmc.Select(
-                                                    label="Select your aggregation method",
+                                                    label="Select your interactive component",
                                                     id={
                                                         "type": "input-dropdown-method",
                                                         "index": id["index"],
@@ -1177,9 +1300,10 @@ def update_modal(n_clicks, ids):
                                             id={
                                                 "type": "input-body",
                                                 "index": id["index"],
-                                            }
-                                        )
-                                    color="light",
+                                            },
+                                            style={"width": "100%"},
+                                        ),
+                                        style={"width": "600px"},
                                     ),
                                 ],
                                 width="auto",
@@ -1261,7 +1385,9 @@ def update_card_body(input_value, column_value, aggregation_value):
     column_type = str(df[column_value].dtype)
 
     # Get the pandas function for the selected aggregation
-    func_name = agg_functions[column_type]["input_methods"][aggregation_value]["mantine"]
+    func_name = agg_functions[column_type]["input_methods"][aggregation_value][
+        "component"
+    ]
     print(func_name)
 
     # if callable(func_name):
@@ -1281,15 +1407,23 @@ def update_card_body(input_value, column_value, aggregation_value):
 
     # if type(v) is np.float64:
     #     v = round(v, 2)
-        # v = "{:,.2f}".format(round(v, 2))
-        # v = "{:,.2f}".format(round(v, 2)).replace(",", " ")
+    # v = "{:,.2f}".format(round(v, 2))
+    # v = "{:,.2f}".format(round(v, 2)).replace(",", " ")
 
     card_title = html.H5(f"{input_value}")
 
-    if aggregation_value  in  ["Select", "MultiSelect", "SegmentedControl"]:
+    if aggregation_value in ["Select", "MultiSelect", "SegmentedControl"]:
         data = df[column_value].unique()
 
         new_card_body = [card_title, func_name(data=data)]
+        print(new_card_body)
+
+        return new_card_body
+    elif aggregation_value in ["TextInput"]:
+        new_card_body = [
+            card_title,
+            func_name(placeholder="Your selected value"),
+        ]
         print(new_card_body)
 
         return new_card_body
@@ -1297,9 +1431,19 @@ def update_card_body(input_value, column_value, aggregation_value):
     elif aggregation_value in ["Slider", "RangeSlider"]:
         min_value = df[column_value].min()
         max_value = df[column_value].max()
-        new_card_body = [card_title, func_name(min=min_value, max=max_value)]
+        kwargs = dict()
+        if aggregation_value == "Slider":
+            marks = dict()
+            if df[column_value].nunique() < 30:
+                marks = {str(elem): str(elem) for elem in df[column_value].unique()}
+            step = None
+            included = False
+            kwargs = dict(marks=marks, step=step, included=included)
+
+        new_card_body = [card_title, func_name(min=min_value, max=max_value, **kwargs)]
         print(new_card_body)
         return new_card_body
+
 
 # Callback to update aggregation dropdown options based on the selected column
 @app.callback(
@@ -1376,7 +1520,6 @@ def update_card_body(input_value, column_value, aggregation_value):
         v = round(v, 2)
         # v = "{:,.2f}".format(round(v, 2))
         # v = "{:,.2f}".format(round(v, 2)).replace(",", " ")
-
 
     new_card_body = [html.H5(f"{input_value}"), html.P(f"{v}")]
 
