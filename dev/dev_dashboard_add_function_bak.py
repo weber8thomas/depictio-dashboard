@@ -12,7 +12,11 @@ import re
 from dash_iconify import DashIconify
 
 
-from config import external_stylesheets
+external_stylesheets = [
+    dbc.themes.BOOTSTRAP,
+    "https://use.fontawesome.com/releases/v5.7.2/css/all.css",
+    "https://codepen.io/chriddyp/pen/bWLwgP.css",
+]
 
 app = dash.Dash(
     __name__,
@@ -21,101 +25,523 @@ app = dash.Dash(
 )
 
 
-from utils import (
-    get_common_params,
-    get_specific_params,
-    extract_info_from_docstring,
-    process_json_from_docstring,
-    get_param_info,
-)
-from utils import (
-    plotly_vizu_list,
-    plotly_vizu_dict,
-    common_params,
-    common_params_names,
-    specific_params,
-    param_info,
-    base_elements,
-    allowed_types,
-    plotly_bootstrap_mapping,
-    secondary_common_params,
-    secondary_common_params_lite,
-)
-
-from utils import agg_functions
-
-from utils import create_initial_figure, load_data
-
-# Data
-
 df = pd.read_csv(
     "https://raw.githubusercontent.com/plotly/datasets/master/gapminderDataFiveYear.csv"
 )
 # print(df)
 
 
-backend_components = html.Div(
-    [
-        dcc.Interval(
-            id="interval",
-            interval=2000,  # Save input value every 1 second
-            n_intervals=0,
-        ),
-        # dcc.Store(id="stored-year", storage_type="memory", data=init_year),
-        # dcc.Store(id="stored-children", storage_type="memory", data=init_children),
-        # dcc.Store(id="stored-layout", storage_type="memory", data=init_layout),
-        dcc.Store(id="stored-children", storage_type="memory"),
-        dcc.Store(id="stored-layout", storage_type="memory"),
-    ]
-)
+agg_functions = {
+    "int64": {
+        "title": "Integer",
+        "input_methods": {
+            "Slider": {
+                "component": dcc.Slider,
+                "description": "Single value slider",
+            },
+            "RangeSlider": {
+                "component": dcc.RangeSlider,
+                "description": "Two values slider",
+            },
+        },
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "unique": {
+                "pandas": "nunique",
+                "numpy": None,
+                "description": "Number of distinct elements",
+            },
+            "sum": {
+                "pandas": "sum",
+                "numpy": "sum",
+                "description": "Sum of non-NA values",
+            },
+            "average": {
+                "pandas": "mean",
+                "numpy": "mean",
+                "description": "Mean of non-NA values",
+            },
+            "median": {
+                "pandas": "median",
+                "numpy": "median",
+                "description": "Arithmetic median of non-NA values",
+            },
+            "min": {
+                "pandas": "min",
+                "numpy": "min",
+                "description": "Minimum of non-NA values",
+            },
+            "max": {
+                "pandas": "max",
+                "numpy": "max",
+                "description": "Maximum of non-NA values",
+            },
+            "range": {
+                "pandas": lambda df: df.max() - df.min(),
+                "numpy": "ptp",
+                "description": "Range of non-NA values",
+            },
+            "variance": {
+                "pandas": "var",
+                "numpy": "var",
+                "description": "Variance of non-NA values",
+            },
+            "std_dev": {
+                "pandas": "std",
+                "numpy": "std",
+                "description": "Standard Deviation of non-NA values",
+            },
+            "percentile": {
+                "pandas": "quantile",
+                "numpy": "percentile",
+                "description": "Percentiles of non-NA values",
+            },
+            "skewness": {
+                "pandas": "skew",
+                "numpy": None,
+                "description": "Skewness of non-NA values",
+            },
+            "kurtosis": {
+                "pandas": "kurt",
+                "numpy": None,
+                "description": "Kurtosis of non-NA values",
+            },
+            "cumulative_sum": {
+                "pandas": "cumsum",
+                "numpy": "cumsum",
+                "description": "Cumulative sum of non-NA values",
+            },
+        },
+    },
+    "float64": {
+        "title": "Floating Point",
+        "input_methods": {
+            "Slider": {
+                "component": dcc.Slider,
+                "description": "Single value slider",
+            },
+            "RangeSlider": {
+                "component": dcc.RangeSlider,
+                "description": "Two values slider",
+            },
+        },
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "unique": {
+                "pandas": "nunique",
+                "numpy": None,
+                "description": "Number of distinct elements",
+            },
+            "sum": {
+                "pandas": "sum",
+                "numpy": "sum",
+                "description": "Sum of non-NA values",
+            },
+            "average": {
+                "pandas": "mean",
+                "numpy": "mean",
+                "description": "Mean of non-NA values",
+            },
+            "median": {
+                "pandas": "median",
+                "numpy": "median",
+                "description": "Arithmetic median of non-NA values",
+            },
+            "min": {
+                "pandas": "min",
+                "numpy": "min",
+                "description": "Minimum of non-NA values",
+            },
+            "max": {
+                "pandas": "max",
+                "numpy": "max",
+                "description": "Maximum of non-NA values",
+            },
+            "range": {
+                "pandas": lambda df: df.max() - df.min(),
+                "numpy": "ptp",
+                "description": "Range of non-NA values",
+            },
+            "variance": {
+                "pandas": "var",
+                "numpy": "var",
+                "description": "Variance of non-NA values",
+            },
+            "std_dev": {
+                "pandas": "std",
+                "numpy": "std",
+                "description": "Standard Deviation of non-NA values",
+            },
+            "percentile": {
+                "pandas": "quantile",
+                "numpy": "percentile",
+                "description": "Percentiles of non-NA values",
+            },
+            "skewness": {
+                "pandas": "skew",
+                "numpy": None,
+                "description": "Skewness of non-NA values",
+            },
+            "kurtosis": {
+                "pandas": "kurt",
+                "numpy": None,
+                "description": "Kurtosis of non-NA values",
+            },
+            "cumulative_sum": {
+                "pandas": "cumsum",
+                "numpy": "cumsum",
+                "description": "Cumulative sum of non-NA values",
+            },
+        },
+    },
+    "bool": {
+        "title": "Boolean",
+        "description": "Boolean values",
+        "input_methods": {
+            "Checkbox": {
+                "component": dmc.Checkbox,
+                "description": "Checkbox",
+            },
+            "Switch": {
+                "component": dmc.Switch,
+                "description": "Switch",
+            },
+        },
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "sum": {
+                "pandas": "sum",
+                "numpy": "sum",
+                "description": "Sum of non-NA values",
+            },
+            "min": {
+                "pandas": "min",
+                "numpy": "min",
+                "description": "Minimum of non-NA values",
+            },
+            "max": {
+                "pandas": "max",
+                "numpy": "max",
+                "description": "Maximum of non-NA values",
+            },
+        },
+    },
+    "datetime": {
+        "title": "Datetime",
+        "description": "Date and time values",
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "min": {
+                "pandas": "min",
+                "numpy": "min",
+                "description": "Minimum of non-NA values",
+            },
+            "max": {
+                "pandas": "max",
+                "numpy": "max",
+                "description": "Maximum of non-NA values",
+            },
+        },
+    },
+    "timedelta": {
+        "title": "Timedelta",
+        "description": "Differences between two datetimes",
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "sum": {
+                "pandas": "sum",
+                "numpy": "sum",
+                "description": "Sum of non-NA values",
+            },
+            "min": {
+                "pandas": "min",
+                "numpy": "min",
+                "description": "Minimum of non-NA values",
+            },
+            "max": {
+                "pandas": "max",
+                "numpy": "max",
+                "description": "Maximum of non-NA values",
+            },
+        },
+    },
+    "category": {
+        "title": "Category",
+        "description": "Finite list of text values",
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "mode": {
+                "pandas": "mode",
+                "numpy": None,
+                "description": "Most common value",
+            },
+        },
+    },
+    "object": {
+        "title": "Object",
+        "input_methods": {
+            "TextInput": {
+                "component": dmc.TextInput,
+                "description": "Text input box",
+            },
+            "Select": {
+                "component": dmc.Select,
+                "description": "Select",
+            },
+            "MultiSelect": {
+                "component": dmc.MultiSelect,
+                "description": "MultiSelect",
+            },
+            "SegmentedControl": {
+                "component": dmc.SegmentedControl,
+                "description": "SegmentedControl",
+            },
+        },
+        "description": "Text or mixed numeric or non-numeric values",
+        "card_methods": {
+            "count": {
+                "pandas": "count",
+                "numpy": "count_nonzero",
+                "description": "Counts the number of non-NA cells",
+            },
+            "mode": {
+                "pandas": "mode",
+                "numpy": None,
+                "description": "Most common value",
+            },
+            "nunique": {
+                "pandas": "nunique",
+                "numpy": None,
+                "description": "Number of distinct elements",
+            },
+        },
+    },
+}
 
-header = html.Div(
-    [
-        html.H1("Depictio"),
-        dmc.Button(
-            "Add new component",
-            id="add-button",
-            size="lg",
-            radius="xl",
-            variant="gradient",
-            n_clicks=0,
-        ),
-        dbc.Checklist(
-            id="edit-dashboard-mode-button",
-            # color="secondary",
-            style={"margin-left": "20px", "font-size": "22px"},
-            # size="lg",
-            # n_clicks=0,
-            options=[
-                {"label": "Edit dashboard", "value": 0},
-            ],
-            value=[0],
-            switch=True,
-        ),
-    ],
-)
+
+def get_common_params(plotly_vizu_list):
+    common_params = set.intersection(
+        *[set(inspect.signature(func).parameters.keys()) for func in plotly_vizu_list]
+    )
+    common_param_names = [p for p in list(common_params)]
+    common_param_names.sort(
+        key=lambda x: list(inspect.signature(plotly_vizu_list[0]).parameters).index(x)
+    )
+    return common_params, common_param_names
+
+
+def get_specific_params(plotly_vizu_list, common_params):
+    specific_params = {}
+    for vizu_func in plotly_vizu_list:
+        func_params = inspect.signature(vizu_func).parameters
+        param_names = list(func_params.keys())
+        common_params_tmp = (
+            common_params.intersection(func_params.keys())
+            if common_params
+            else set(func_params.keys())
+        )
+        specific_params[vizu_func.__name__] = [
+            p for p in param_names if p not in common_params_tmp
+        ]
+    return specific_params
+
+
+def extract_info_from_docstring(docstring):
+    lines = docstring.split("\n")
+    # print(lines)
+    parameters_section = False
+    result = {}
+
+    for line in lines:
+        # print(line)
+        if line.startswith("Parameters"):
+            parameters_section = True
+            continue
+        if parameters_section:
+            # if line.startswith("----------"):
+            #     break
+            if line.startswith("    ") is False:
+                # print(line.split(': '))
+                line_processed = line.split(": ")
+                # print(line_processed)
+                if len(line_processed) == 2:
+                    parameter, type = line_processed[0], line_processed[1]
+                    result[parameter] = {"type": type, "description": list()}
+                else:
+                    continue
+
+            elif line.startswith("    ") is True:
+                # result[-1] += " " + line.strip()
+                # print(line.strip())
+                result[parameter]["description"].append(line.strip())
+
+    return result
+
+
+def process_json_from_docstring(data):
+    for key, value in data.items():
+        # Get the type associated with the field
+        field_type = value.get("type")
+        # field_type = value.get('type')
+        description = " ".join(value.get("description"))
+
+        # Check if there are any options available for the field
+        options = []
+        # for description in value.get('description', []):
+        if "One of" in description:
+            # The options are usually listed after 'One of'
+            option_str = description.split("One of")[-1].split(".")[0]
+
+            options = list(set(re.findall("`'(.*?)'`", option_str)))
+        elif "one of" in data[key]["type"]:
+            option_str = data[key]["type"].split("one of")[-1]
+            options = list(set(re.findall("`'(.*?)'`", option_str)))
+
+        if options:
+            data[key]["options"] = options
+
+        if "Series or array-like" in field_type:
+            data[key]["processed_type"] = "column"
+        else:
+            data[key]["processed_type"] = data[key]["type"].split(" ")[0].split(",")[0]
+    return data
+
+
+def get_param_info(plotly_vizu_list):
+    # Code for extract_info_from_docstring and process_json_from_docstring...
+    # ...
+    param_info = {}
+    for func in plotly_vizu_list:
+        param_info[func.__name__] = extract_info_from_docstring(func.__doc__)
+        param_info[func.__name__] = process_json_from_docstring(
+            param_info[func.__name__]
+        )
+    return param_info
+
+
+def get_dropdown_options(df):
+    dropdown_options = [{"label": col, "value": col} for col in df.columns]
+    return dropdown_options
+
+
+# TODO: utils / config
+
+# Define the list of Plotly visualizations
+plotly_vizu_list = [px.scatter, px.line, px.bar, px.histogram, px.box]
+
+# Map visualization function names to the functions themselves
+plotly_vizu_dict = {vizu_func.__name__: vizu_func for vizu_func in plotly_vizu_list}
+
+# Get common and specific parameters for the visualizations
+common_params, common_params_names = get_common_params(plotly_vizu_list)
+specific_params = get_specific_params(plotly_vizu_list, common_params)
+
+# print(common_params)
+# print(common_params_names)
+# print(specific_params)
+
+# Generate parameter information and dropdown options
+param_info = get_param_info(plotly_vizu_list)
+dropdown_options = get_dropdown_options(df)
+
+# Define the elements for the dropdown menu
+base_elements = ["x", "y", "color"]
+
+# Define allowed types and the corresponding Bootstrap components
+allowed_types = ["str", "int", "float", "boolean", "column"]
+plotly_bootstrap_mapping = {
+    "str": dbc.Input,
+    "int": dbc.Input,
+    "float": dbc.Input,
+    "boolean": dbc.Checklist,
+    "column": dcc.Dropdown,
+    "list": dcc.Dropdown,
+}
+
+# Identify the parameters not in the dropdown elements
+secondary_common_params = [
+    e
+    for e in common_params_names[1:]
+    # e for e in common_params_names[1:] if e not in dropdown_elements
+]
+secondary_common_params_lite = [
+    e
+    for e in secondary_common_params
+    if e
+    not in [
+        "category_orders",
+        "color_discrete_sequence",
+        "color_discrete_map",
+        "log_x",
+        "log_y",
+        "labels",
+        "range_x",
+        "range_y",
+    ]
+]
+# print(secondary_common_params)
+# print("\n")
 
 
 init_layout = dict()
 init_children = list()
-app.layout = dbc.Container(
+app.layout = html.Div(
     [
-        html.Div(
-            [
-                backend_components,
-                header,
-                dash_draggable.ResponsiveGridLayout(
-                    id="draggable",
-                    clearSavedLayout=True,
-                    layouts=init_layout,
-                    children=init_children,
-                    isDraggable=True,
-                    isResizable=True,
-                ),
-            ],
+        html.H1("Dash Draggable"),
+        dmc.Button(
+            "Add",
+            id="add-button",
+            size="xl",
+            radius="xl",
+            variant="gradient",
+            n_clicks=0,
         ),
-    ],
-    fluid=False,
+        dash_draggable.ResponsiveGridLayout(
+            id="draggable",
+            clearSavedLayout=True,
+            layouts=init_layout,
+            children=init_children,
+            isDraggable=True,
+            isResizable=True,
+        ),
+        dbc.Container(
+            [
+                dcc.Interval(
+                    id="interval",
+                    interval=2000,  # Save slider value every 1 second
+                    n_intervals=0,
+                ),
+                # dcc.Store(id="selections-store", storage_type="session", data={}),
+            ],
+            fluid=False,
+        ),
+        html.Div(id="output-container"),
+        html.Div(id="output-container2"),
+    ]
 )
 
 
@@ -141,138 +567,125 @@ def close_modal(n_clicks):
     return True
 
 
-# @app.callback(
-#     [Output("draggable", "children"), Output("draggable", "layouts")],
-#     [Input("add-button", "n_clicks")],
-#     [State("draggable", "children"), State("draggable", "layouts")],
-#     prevent_initial_call=True,
-# )
-# def add_new_div(n, children, layouts):
+@app.callback(
+    [Output("draggable", "children"), Output("draggable", "layouts")],
+    [Input("add-button", "n_clicks")],
+    [State("draggable", "children"), State("draggable", "layouts")],
+    prevent_initial_call=True,
+)
+def add_new_div(n, children, layouts):
+    print("add_new_div")
+    # print(app._callback_list)
 
-#     print("add_new_div")
-#     # print(app._callback_list)
+    print("index: {}".format(n))
+    new_plot_id = f"graph-{n}"
+    print(new_plot_id)
 
-#     print("index: {}".format(n))
-#     new_plot_id = f"graph-{n}"
-#     print(new_plot_id)
+    new_element = html.Div(
+        [
+            html.Div(id={"type": "add-content", "index": n}),
+            dbc.Modal(
+                id={"type": "modal", "index": n},
+                children=[
+                    dbc.ModalHeader(html.H5("Design your new dashboard component")),
+                    dbc.ModalBody(
+                        [
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        dmc.Button(
+                                            "Figure",
+                                            id={
+                                                "type": "btn-option",
+                                                "index": n,
+                                                "value": "Figure",
+                                            },
+                                            n_clicks=0,
+                                            style={"display": "inline-block", "width": "250px", "height":"100px"},
+                                            size="xl",
+                                            color="grape",
+                                            leftIcon=DashIconify(icon="mdi:graph-box"),
+                                        )
+                                    ),
+                                    dbc.Col(
+                                        dmc.Button(
+                                            "Card",
+                                            id={
+                                                "type": "btn-option",
+                                                "index": n,
+                                                "value": "Card",
+                                            },
+                                            n_clicks=0,
+                                            style={"display": "inline-block", "width": "250px", "height":"100px"},
+                                            size="xl",
+                                            color="violet",
+                                            leftIcon=DashIconify(
+                                                icon="formkit:number", color="white"
+                                            ),
+                                        )
+                                    ),
+                                    dbc.Col(
+                                        dmc.Button(
+                                            "Interactive",
+                                            id={
+                                                "type": "btn-option",
+                                                "index": n,
+                                                "value": "Interactive",
+                                            },
+                                            n_clicks=0,
+                                            style={"display": "inline-block", "width": "250px", "height":"100px"},
+                                            size="xl",
+                                            color="indigo",
+                                            leftIcon=DashIconify(
+                                                icon="bx:slider-alt", color="white"
+                                            ),
+                                        )
+                                    ),
+                                ]
+                            ),
+                        ],
+                        id={"type": "modal-body", "index": n},
+                        style={
+                            "display": "flex",
+                            "justify-content": "center",
+                            "align-items": "center",
+                            "flex-direction": "column",
+                            "height": "100%",
+                            "width": "100%",
+                        },
+                    ),
+                ],
+                is_open=True,
+                size="xl",
+                backdrop=False,
+                style={
+                    "height": "100%",
+                    "width": "100%",
+                    # "display": "flex",
+                    # "flex-direction": "column",
+                    # "flex-grow": "0",
+                },
+            ),
+        ],
+        id=new_plot_id,
+    )
 
-#     new_element = html.Div(
-#         [
-#             html.Div(id={"type": "add-content", "index": n}),
-#             dbc.Modal(
-#                 id={"type": "modal", "index": n},
-#                 children=[
-#                     dbc.ModalHeader(html.H5("Design your new dashboard component")),
-#                     dbc.ModalBody(
-#                         [
-#                             dbc.Row(
-#                                 [
-#                                     dbc.Col(
-#                                         dmc.Button(
-#                                             "Figure",
-#                                             id={
-#                                                 "type": "btn-option",
-#                                                 "index": n,
-#                                                 "value": "Figure",
-#                                             },
-#                                             n_clicks=0,
-#                                             style={
-#                                                 "display": "inline-block",
-#                                                 "width": "250px",
-#                                                 "height": "100px",
-#                                             },
-#                                             size="xl",
-#                                             color="grape",
-#                                             leftIcon=DashIconify(icon="mdi:graph-box"),
-#                                         )
-#                                     ),
-#                                     dbc.Col(
-#                                         dmc.Button(
-#                                             "Card",
-#                                             id={
-#                                                 "type": "btn-option",
-#                                                 "index": n,
-#                                                 "value": "Card",
-#                                             },
-#                                             n_clicks=0,
-#                                             style={
-#                                                 "display": "inline-block",
-#                                                 "width": "250px",
-#                                                 "height": "100px",
-#                                             },
-#                                             size="xl",
-#                                             color="violet",
-#                                             leftIcon=DashIconify(
-#                                                 icon="formkit:number", color="white"
-#                                             ),
-#                                         )
-#                                     ),
-#                                     dbc.Col(
-#                                         dmc.Button(
-#                                             "Interactive",
-#                                             id={
-#                                                 "type": "btn-option",
-#                                                 "index": n,
-#                                                 "value": "Interactive",
-#                                             },
-#                                             n_clicks=0,
-#                                             style={
-#                                                 "display": "inline-block",
-#                                                 "width": "250px",
-#                                                 "height": "100px",
-#                                             },
-#                                             size="xl",
-#                                             color="indigo",
-#                                             leftIcon=DashIconify(
-#                                                 icon="bx:slider-alt", color="white"
-#                                             ),
-#                                         )
-#                                     ),
-#                                 ]
-#                             ),
-#                         ],
-#                         id={"type": "modal-body", "index": n},
-#                         style={
-#                             "display": "flex",
-#                             "justify-content": "center",
-#                             "align-items": "center",
-#                             "flex-direction": "column",
-#                             "height": "100%",
-#                             "width": "100%",
-#                         },
-#                     ),
-#                 ],
-#                 is_open=True,
-#                 size="xl",
-#                 backdrop=False,
-#                 style={
-#                     "height": "100%",
-#                     "width": "100%",
-#                     # "display": "flex",
-#                     # "flex-direction": "column",
-#                     # "flex-grow": "0",
-#                 },
-#             ),
-#         ],
-#         id=new_plot_id,
-#     )
+    children.append(new_element)
+    new_layout_item = {
+        "i": f"{new_plot_id}",
+        "x": 10 * ((len(children) + 1) % 2),
+        "y": n * 10,
+        "w": 6,
+        "h": 5,
+    }
 
-#     children.append(new_element)
-#     new_layout_item = {
-#         "i": f"{new_plot_id}",
-#         "x": 10 * ((len(children) + 1) % 2),
-#         "y": n * 10,
-#         "w": 6,
-#         "h": 5,
-#     }
-
-#     # Update the layouts property for both 'lg' and 'sm' sizes
-#     updated_layouts = {}
-#     for size in ["lg", "sm"]:
-#         if size not in layouts:
-#             layouts[size] = []
-#         updated_layouts[size] = layouts[size] + [new_layout_item]
-#     return children, updated_layouts
+    # Update the layouts property for both 'lg' and 'sm' sizes
+    updated_layouts = {}
+    for size in ["lg", "sm"]:
+        if size not in layouts:
+            layouts[size] = []
+        updated_layouts[size] = layouts[size] + [new_layout_item]
+    return children, updated_layouts
 
 
 # Define the callback to update the specific parameters dropdowns
@@ -352,7 +765,7 @@ def update_specific_params(n_clicks, visu_type, edit_button_id):
         secondary_common_params_dropdowns = list()
         primary_common_params_dropdowns = list()
         for e in secondary_common_params:
-            # print(e)
+            print(e)
             processed_type_tmp = param_info[value][e]["processed_type"]
             # allowed_types = ["str", "int", "float", "column", "list"]
             allowed_types = ["str", "int", "float", "column"]
@@ -420,7 +833,7 @@ def update_specific_params(n_clicks, visu_type, edit_button_id):
                 else:
                     primary_common_params_dropdowns.append(accordion_item)
 
-        # print(secondary_common_params_dropdowns)
+        print(secondary_common_params_dropdowns)
 
         primary_common_params_layout = [
             dbc.Accordion(
@@ -543,10 +956,10 @@ def toggle_collapse(n, is_open):
 def get_values_to_generate_kwargs(*args):
     print("get_values_to_generate_kwargs")
     # print(args)
-    # print("\n")
+    print("\n")
 
     children = args[0]
-    # print(children)
+    print(children)
     # visu_type = args[1]
     # print(children)
     existing_kwargs = args[-1]
@@ -642,16 +1055,16 @@ def get_values_to_generate_kwargs(*args):
                 **return_dict,
                 **existing_kwargs,
             }
-            # print("BLANK DICT, ROLLBACK TO EXISTING KWARGS")
-            # print(return_dict)
+            print("BLANK DICT, ROLLBACK TO EXISTING KWARGS")
+            print(return_dict)
 
         if return_dict:
-            # print("RETURNING DICT")
-            # print(return_dict)
+            print("RETURNING DICT")
+            print(return_dict)
             # print(accordion_secondary_common_params)
             return return_dict
         else:
-            # print("EXISTING KWARGS")
+            print("EXISTING KWARGS")
             return existing_kwargs
 
         # else:
@@ -685,7 +1098,7 @@ def update_figure(*args):
 
     # print(dict_kwargs)
     dict_kwargs = {k: v for k, v in dict_kwargs.items() if v is not None}
-    # print(dict_kwargs)
+    print(dict_kwargs)
     if dict_kwargs:
         figure = plotly_vizu_dict[visu_type.lower()](df, **dict_kwargs)
         # figure = px.scatter(df, **dict_kwargs)
@@ -693,7 +1106,7 @@ def update_figure(*args):
         # figure.update_layout(uirevision=1)
 
         return figure
-    # print("\n")
+    print("\n")
 
     # accordion_specific_params = args[0][3]
 
@@ -719,10 +1132,10 @@ def update_modal(n_clicks, ids):
         if n > 0:
             if id["value"] == "Figure":
                 # plot_func = plotly_vizu_dict[visualization_type]
-                # plot_kwargs = dict(
-                #     x=df.columns[0], y=df.columns[1], color=df.columns[2]
-                # )
-                plot_kwargs = dict()
+                plot_kwargs = dict(
+                    x=df.columns[0], y=df.columns[1], color=df.columns[2]
+                )
+                # plot_kwargs = dict()
 
                 figure = go.Figure()
 
@@ -841,7 +1254,7 @@ def update_modal(n_clicks, ids):
                     dcc.Store(
                         id={"type": "dict_kwargs", "index": id["index"]},
                         data=plot_kwargs,
-                        storage_type="memory",
+                        storage_type="session",
                     ),
                 ]
             elif id["value"] == "Card":
@@ -1315,79 +1728,42 @@ def update_button(n_clicks, children, btn_id):
     # print(f"Found ids: {all_ids}")
 
     div_index = 4 if box_type == "segmented-control-visu-graph" else 2
-    if box_type:
-        if box_type == "segmented-control-visu-graph":
-            child = children[div_index]["props"]["children"][0]["props"][
-                "children"
-            ]  # Figure
-            child["props"]["id"]["type"] = (
-                "updated-" + child["props"]["id"]["type"]
-            )  # Figure
+    if box_type == "segmented-control-visu-graph":
+        child = children[div_index]["props"]["children"][0]["props"][
+            "children"
+        ]  # Figure
+        child["props"]["id"]["type"] = (
+            "updated-" + child["props"]["id"]["type"]
+        )  # Figure
 
-            # print(child)
-            print("OK")
-        elif box_type == "card":
-            # print(children)
-            child = children[div_index]["props"]["children"][1]["props"]["children"][
-                1
-            ]  # Card
-            print(child)
-            child["props"]["children"]["props"]["id"]["type"] = (
-                "updated-" + child["props"]["children"]["props"]["id"]["type"]
-            )  # Figure
-        elif box_type == "input":
-            # print(children)
-            child = children[div_index]["props"]["children"][1]["props"]["children"][
-                1
-            ]  # Card
-            print(child)
-            child["props"]["children"]["props"]["id"]["type"] = (
-                "updated-" + child["props"]["children"]["props"]["id"]["type"]
-            )  # Figure
-        # elif box_type == "input":
-        #     child = children[0]["props"]["children"][1]["props"]["children"] # Card
-        #     print(child)
-        #     child["props"]["children"]["props"]["id"]["type"] = "updated-" + child["props"]["children"]["props"]["id"]["type"] # Figure
-
-        # edit_button = dbc.Button(
-        #     "Edit",
-        #     id={
-        #         "type": "edit-button",
-        #         "index": f"edit-{btn_id}",
-        #     },
-        #     color="secondary",
-        #     style={"margin-left": "10px"},
-        #     # size="lg",
-        # )
-
-        edit_button = dmc.Button(
-            "Edit",
-            id={
-                "type": "edit-button",
-                "index": f"edit-{btn_id}",
-            },
-            color="gray",
-            variant="filled",
-            leftIcon=DashIconify(icon="basil:edit-solid", color="white"),
-        )
-
-        remove_button = dmc.Button(
-            "Remove",
-            id={"type": "remove-button", "index": f"remove-{btn_id}"},
-            color="red",
-            variant="filled",
-            leftIcon=DashIconify(icon="jam:trash", color="white"),
-        )
-
-        new_draggable_child = html.Div(
-            [
-                html.Div([remove_button, edit_button]),
-                child,
-            ],
-            id=f"draggable-{btn_id}",
-        )
-
-        return new_draggable_child
+        print(child)
+        print("OK")
+        return child
+    elif box_type == "card":
+        # print(children)
+        child = children[div_index]["props"]["children"][1]["props"]["children"][
+            1
+        ]  # Card
+        print(child)
+        child["props"]["children"]["props"]["id"]["type"] = (
+            "updated-" + child["props"]["children"]["props"]["id"]["type"]
+        )  # Figure
+        return child
+    elif box_type == "input":
+        # print(children)
+        child = children[div_index]["props"]["children"][1]["props"]["children"][
+            1
+        ]  # Card
+        print(child)
+        child["props"]["children"]["props"]["id"]["type"] = (
+            "updated-" + child["props"]["children"]["props"]["id"]["type"]
+        )  # Figure
+        return child
+    # elif box_type == "input":
+    #     child = children[0]["props"]["children"][1]["props"]["children"] # Card
+    #     print(child)
+    #     child["props"]["children"]["props"]["id"]["type"] = "updated-" + child["props"]["children"]["props"]["id"]["type"] # Figure
+    #     return child
 
     else:
         return html.Div()
@@ -1413,613 +1789,6 @@ def update_button(n_clicks, children, btn_id):
     #     # return dcc.Graph(
     #     #     figure=figure, id={"type": "graph", "index": btn_id["index"]}
     #     # )
-
-
-# Add a callback to update the isDraggable property
-@app.callback(
-    [Output("draggable", "isDraggable"), Output("draggable", "isResizable")],
-    [Input("edit-dashboard-mode-button", "value")],
-)
-def freeze_layout(value):
-    # switch based on button's value
-    switch_state = True if len(value) > 0 else False
-    if switch_state is False:
-        return False, False
-    else:
-        return True, True
-
-
-@app.callback(
-    [
-        Output("draggable", "children"),
-        Output("draggable", "layouts"),
-        Output("stored-layout", "data"),
-        Output("stored-children", "data"),
-    ],
-    # [
-    #     Input(f"add-plot-button-{plot_type.lower().replace(' ', '-')}", "n_clicks")
-    #     for plot_type in AVAILABLE_PLOT_TYPES.keys()
-    # ]
-    # +
-    [
-        Input("add-button", "n_clicks"),
-        Input("edit-dashboard-mode-button", "value"),
-        Input({"type": "remove-button", "index": dash.dependencies.ALL}, "n_clicks"),
-        Input({"type": "input-component", "index": dash.dependencies.ALL}, "value"),
-        # Input("time-input", "value"),
-        Input("stored-layout", "data"),
-        Input("stored-children", "data"),
-        Input("draggable", "layouts"),
-    ],
-    [
-        State("draggable", "children"),
-        State("draggable", "layouts"),
-        State("stored-layout", "data"),
-        State("stored-children", "data"),
-    ],
-    # prevent_initial_call=True,
-)
-def update_draggable_children(
-    # n_clicks, selected_year, current_draggable_children, current_layouts, stored_figures
-    *args,
-):
-    # for arg in [*args]:
-    #     print("\n")
-    #     print(arg)
-    # print("______________________")
-
-    ctx = dash.callback_context
-    triggered_input = ctx.triggered[0]["prop_id"].split(".")[0]
-    print(triggered_input)
-    print(ctx.triggered)
-    print("\n")
-    stored_layout_data = args[-7]
-    stored_children_data = args[-6]
-    new_layouts = args[-5]
-    # print(args[-10])
-    switch_state = True if len(args[-10]) > 0 else False
-    switch_state_index = -1 if switch_state is True else -1
-    print(f"Switch state: {switch_state}")
-
-    # remove-button -6
-    # selected_year = args[-5]
-
-    current_draggable_children = args[-4]
-    current_layouts = args[-3]
-    stored_layout = args[-2]
-    stored_figures = args[-1]
-
-    filter_dict = {}
-
-    # Enumerate through all the children
-    for j, child in enumerate(current_draggable_children):
-        # print(f"TOTO-{j}")
-        # print(child["props"]["id"])
-        # print(child["props"]["children"][switch_state_index]["props"])
-
-        # Filter out those children that are not input components
-        if (
-            "-input" in child["props"]["id"]
-            and "value"
-            in child["props"]["children"][switch_state_index]["props"]["children"][-1][
-                "props"
-            ]
-        ):
-            # Extract the id and the value of the input component
-            # print(f"TATA-{j}")
-
-            id_components = child["props"]["children"][switch_state_index]["props"][
-                "children"
-            ][-1]["props"]["id"]["index"].split("-")[2:]
-            value = child["props"]["children"][switch_state_index]["props"]["children"][
-                -1
-            ]["props"]["value"]
-
-            # Construct the key for the dictionary
-            key = "-".join(id_components)
-
-            # Add the key-value pair to the dictionary
-            filter_dict[key] = value
-
-    # if current_draggable_children is None:
-    #     current_draggable_children = []
-    # if current_layouts is None:
-    #     current_layouts = dict()
-
-    if "add-button" in triggered_input:
-        n = ctx.triggered[0]["value"]
-        print("add_new_div")
-        # print(app._callback_list)
-
-        print("index: {}".format(n))
-        new_plot_id = f"graph-{n}"
-        print(new_plot_id)
-
-        new_element = html.Div(
-            [
-                html.Div(id={"type": "add-content", "index": n}),
-                dbc.Modal(
-                    id={"type": "modal", "index": n},
-                    children=[
-                        dbc.ModalHeader(html.H5("Design your new dashboard component")),
-                        dbc.ModalBody(
-                            [
-                                dbc.Row(
-                                    [
-                                        dbc.Col(
-                                            dmc.Button(
-                                                "Figure",
-                                                id={
-                                                    "type": "btn-option",
-                                                    "index": n,
-                                                    "value": "Figure",
-                                                },
-                                                n_clicks=0,
-                                                style={
-                                                    "display": "inline-block",
-                                                    "width": "250px",
-                                                    "height": "100px",
-                                                },
-                                                size="xl",
-                                                color="grape",
-                                                leftIcon=DashIconify(
-                                                    icon="mdi:graph-box"
-                                                ),
-                                            )
-                                        ),
-                                        dbc.Col(
-                                            dmc.Button(
-                                                "Card",
-                                                id={
-                                                    "type": "btn-option",
-                                                    "index": n,
-                                                    "value": "Card",
-                                                },
-                                                n_clicks=0,
-                                                style={
-                                                    "display": "inline-block",
-                                                    "width": "250px",
-                                                    "height": "100px",
-                                                },
-                                                size="xl",
-                                                color="violet",
-                                                leftIcon=DashIconify(
-                                                    icon="formkit:number", color="white"
-                                                ),
-                                            )
-                                        ),
-                                        dbc.Col(
-                                            dmc.Button(
-                                                "Interaction",
-                                                id={
-                                                    "type": "btn-option",
-                                                    "index": n,
-                                                    "value": "Interactive",
-                                                },
-                                                n_clicks=0,
-                                                style={
-                                                    "display": "inline-block",
-                                                    "width": "250px",
-                                                    "height": "100px",
-                                                },
-                                                size="xl",
-                                                color="indigo",
-                                                leftIcon=DashIconify(
-                                                    icon="bx:slider-alt", color="white"
-                                                ),
-                                            )
-                                        ),
-                                    ]
-                                ),
-                            ],
-                            id={"type": "modal-body", "index": n},
-                            style={
-                                "display": "flex",
-                                "justify-content": "center",
-                                "align-items": "center",
-                                "flex-direction": "column",
-                                "height": "100%",
-                                "width": "100%",
-                            },
-                        ),
-                    ],
-                    is_open=True,
-                    size="xl",
-                    backdrop=False,
-                    style={
-                        "height": "100%",
-                        "width": "100%",
-                        # "display": "flex",
-                        # "flex-direction": "column",
-                        # "flex-grow": "0",
-                    },
-                ),
-            ],
-            id=new_plot_id,
-        )
-
-        current_draggable_children.append(new_element)
-        new_layout_item = {
-            "i": f"{new_plot_id}",
-            "x": 10 * ((len(current_draggable_children) + 1) % 2),
-            "y": n * 10,
-            "w": 6,
-            "h": 5,
-        }
-
-        # Update the layouts property for both 'lg' and 'sm' sizes
-        updated_layouts = {}
-        for size in ["lg", "sm"]:
-            if size not in current_layouts:
-                current_layouts[size] = []
-            current_layouts[size] = current_layouts[size] + [new_layout_item]
-        return (
-            current_draggable_children,
-            current_layouts,
-            current_layouts,
-            current_draggable_children,
-        )
-
-    #     return (
-    #         updated_draggable_children,
-    #         updated_layouts,
-    #         # selected_year,
-    #         updated_layouts,
-    #         updated_draggable_children,
-    #         # selected_year,
-    #     )
-
-    # if triggered_input.startswith("add-plot-button-"):
-    #     plot_type = triggered_input.replace("add-plot-button-", "")
-
-    #     n_clicks = ctx.triggered[0]["value"]
-    #     print(n_clicks)
-
-    #     new_plot_id = f"graph-{n_clicks}-{plot_type.lower().replace(' ', '-')}"
-    #     new_plot_type = plot_type
-    #     print(new_plot_type)
-
-    #     if "-card" in new_plot_type:
-    #         new_plot = html.Div(
-    #             create_initial_figure(df, new_plot_type), id=new_plot_id
-    #         )
-    #     elif "-input" in new_plot_type:
-    #         print(new_plot_id)
-    #         # input_id = f"{plot_type.lower().replace(' ', '-')}"
-
-    #         new_plot = create_initial_figure(df, new_plot_type, id=new_plot_id)
-    #     else:
-    #         new_plot = dcc.Graph(
-    #             id=new_plot_id,
-    #             figure=create_initial_figure(df, new_plot_type),
-    #             responsive=True,
-    #             style={
-    #                 "width": "100%",
-    #                 "height": "100%",
-    #             },
-    #             # config={"staticPlot": False, "editable": True},
-    #         )
-    #     # print(new_plot)
-
-    #     # new_draggable_child = new_plot
-    #     edit_button = dbc.Button(
-    #         "Edit",
-    #         id={
-    #             "type": "edit-button",
-    #             "index": f"edit-{new_plot_id}",
-    #         },
-    #         color="secondary",
-    #         style={"margin-left": "10px"},
-    #         # size="lg",
-    #     )
-    #     new_draggable_child = html.Div(
-    #         [
-    #             dbc.Button(
-    #                 "Remove",
-    #                 id={"type": "remove-button", "index": f"remove-{new_plot_id}"},
-    #                 color="danger",
-    #             ),
-    #             edit_button,
-    #             new_plot,
-    #         ],
-    #         id=f"draggable-{new_plot_id}",
-    #     )
-    #     # print(current_draggable_children)
-    #     # print(len(current_draggable_children))
-
-    #     updated_draggable_children = current_draggable_children + [new_draggable_child]
-
-    #     # Define the default size and position for the new plot
-    #     if "-card" not in new_plot_type:
-    #         new_layout_item = {
-    #             "i": f"draggable-{new_plot_id}",
-    #             "x": 10 * ((len(updated_draggable_children) + 1) % 2),
-    #             "y": n_clicks * 10,
-    #             "w": 6,
-    #             "h": 14,
-    #         }
-    #     else:
-    #         new_layout_item = {
-    #             "i": f"draggable-{new_plot_id}",
-    #             "x": 10 * ((len(updated_draggable_children) + 1) % 2),
-    #             "y": n_clicks * 10,
-    #             "w": 4,
-    #             "h": 5,
-    #         }
-
-    #     # Update the layouts property for both 'lg' and 'sm' sizes
-    #     updated_layouts = {}
-    #     for size in ["lg", "sm"]:
-    #         if size not in current_layouts:
-    #             current_layouts[size] = []
-    #         updated_layouts[size] = current_layouts[size] + [new_layout_item]
-
-    #     # Store the newly created figure in stored_figures
-    #     # stored_figures[new_plot_id] = new_plot
-
-    #     return (
-    #         updated_draggable_children,
-    #         updated_layouts,
-    #         # selected_year,
-    #         updated_layouts,
-    #         updated_draggable_children,
-    #         # selected_year,
-    #     )
-
-    # import ast
-
-    # if "-input" in triggered_input and "remove-" not in triggered_input:
-    #     input_id = ast.literal_eval(triggered_input)["index"]
-    #     updated_draggable_children = []
-
-    #     for j, child in enumerate(current_draggable_children):
-    #         if child["props"]["id"].replace("draggable-", "") == input_id:
-    #             updated_draggable_children.append(child)
-    #         elif (
-    #             child["props"]["id"].replace("draggable-", "") != input_id
-    #             and "-input" not in child["props"]["id"]
-    #         ):
-    #             # print(child["props"]["id"]["index"])
-    #             index = -1 if switch_state is True else 0
-    #             graph = child["props"]["children"][index]
-    #             if type(graph["props"]["id"]) is str:
-    #                 # Extract the figure type and its corresponding function
-    #                 figure_type = "-".join(graph["props"]["id"].split("-")[2:])
-    #                 graph_id = graph["props"]["id"]
-    #                 updated_fig = create_initial_figure(
-    #                     df,
-    #                     figure_type,
-    #                     input_id="-".join(input_id.split("-")[2:]),
-    #                     filter=filter_dict,
-    #                 )
-
-    #                 if "-card" in graph_id:
-    #                     graph["props"]["children"] = updated_fig
-
-    #                 else:
-    #                     graph["props"]["figure"] = updated_fig
-    #                 rm_button = dbc.Button(
-    #                     "Remove",
-    #                     id={
-    #                         "type": "remove-button",
-    #                         "index": child["props"]["id"],
-    #                     },
-    #                     color="danger",
-    #                 )
-    #                 edit_button = dbc.Button(
-    #                     "Edit",
-    #                     id={
-    #                         "type": "edit-button",
-    #                         "index": child["props"]["id"],
-    #                     },
-    #                     color="secondary",
-    #                     style={"margin-left": "10px"},
-    #                 )
-    #                 children = (
-    #                     [rm_button, edit_button, graph]
-    #                     if switch_state is True
-    #                     else [graph]
-    #                 )
-    #                 updated_child = html.Div(
-    #                     children=children,
-    #                     id=child["props"]["id"],
-    #                 )
-
-    #                 updated_draggable_children.append(updated_child)
-    #         else:
-    #             updated_draggable_children.append(child)
-
-    #     return (
-    #         updated_draggable_children,
-    #         current_layouts,
-    #         current_layouts,
-    #         updated_draggable_children,
-    #     )
-
-    # if the remove button was clicked, return an empty list to remove all the plots
-
-    # elif "remove-" in triggered_input:
-    #     print("\nREMOVE")
-    #     print(triggered_input, type(triggered_input))
-    #     input_id = ast.literal_eval(triggered_input)["index"]
-
-    #     new_filter_dict = filter_dict
-    #     print(new_filter_dict)
-    #     for child in current_draggable_children:
-    #         if "-".join(child["props"]["id"].split("-")[1:]) == "-".join(
-    #             input_id.split("-")[1:]
-    #         ):
-    #             current_draggable_children.remove(child)
-    #             input_id = "-".join(input_id.split("-")[2:])
-
-    #             # Remove the corresponding entry from filter dictionary
-    #             tmp_input_id = "-".join(input_id.split("-")[1:])
-    #             if "-".join(input_id.split("-")[1:]) in new_filter_dict:
-    #                 del new_filter_dict[tmp_input_id]
-    #             print(new_filter_dict)
-
-    #     updated_draggable_children = []
-
-    #     for j, child in enumerate(current_draggable_children):
-    #         if child["props"]["id"].replace("draggable-", "") == input_id:
-    #             updated_draggable_children.append(child)
-    #         elif (
-    #             child["props"]["id"].replace("draggable-", "") != input_id
-    #             and "-input" not in child["props"]["id"]
-    #         ):
-    #             # print(child["props"]["id"]["index"])
-    #             index = -1 if switch_state is True else 0
-    #             graph = child["props"]["children"][index]
-    #             if type(graph["props"]["id"]) is str:
-    #                 print("TEST")
-    #                 # Extract the figure type and its corresponding function
-    #                 figure_type = "-".join(graph["props"]["id"].split("-")[2:])
-    #                 graph_id = graph["props"]["id"]
-    #                 updated_fig = create_initial_figure(
-    #                     df,
-    #                     figure_type,
-    #                     input_id="-".join(input_id.split("-")[2:]),
-    #                     filter=new_filter_dict,
-    #                 )
-
-    #                 if "-card" in graph_id:
-    #                     graph["props"]["children"] = updated_fig
-
-    #                 else:
-    #                     graph["props"]["figure"] = updated_fig
-    #                 rm_button = dbc.Button(
-    #                     "Remove",
-    #                     id={
-    #                         "type": "remove-button",
-    #                         "index": child["props"]["id"],
-    #                     },
-    #                     color="danger",
-    #                 )
-    #                 edit_button = dbc.Button(
-    #                     "Edit",
-    #                     id={
-    #                         "type": "edit-button",
-    #                         "index": child["props"]["id"],
-    #                     },
-    #                     color="secondary",
-    #                     style={"margin-left": "10px"},
-    #                 )
-    #                 children = (
-    #                     [rm_button, edit_button, graph]
-    #                     if switch_state is True
-    #                     else [graph]
-    #                 )
-    #                 updated_child = html.Div(
-    #                     children=children,
-    #                     id=child["props"]["id"],
-    #                 )
-
-    #                 updated_draggable_children.append(updated_child)
-    #         else:
-    #             updated_draggable_children.append(child)
-
-    #     # return (
-    #     #     current_draggable_children,
-    #     #     new_layouts,
-    #     #     # selected_year,
-    #     #     new_layouts,
-    #     #     current_draggable_children,
-    #     #     # selected_year,
-    #     # )
-    #     return (
-    #         updated_draggable_children,
-    #         current_layouts,
-    #         current_layouts,
-    #         updated_draggable_children,
-    #     )
-
-    elif triggered_input == "stored-layout" or triggered_input == "stored-children":
-        if stored_layout_data and stored_children_data:
-            return (
-                stored_children_data,
-                stored_layout_data,
-                stored_layout_data,
-                stored_children_data,
-            )
-        else:
-            # Load data from the file if it exists
-            loaded_data = load_data()
-            if loaded_data:
-                return (
-                    loaded_data["stored_children_data"],
-                    loaded_data["stored_layout_data"],
-                    loaded_data["stored_layout_data"],
-                    loaded_data["stored_children_data"],
-                )
-            else:
-                return (
-                    current_draggable_children,
-                    {},
-                    stored_layout,
-                    stored_figures,
-                )
-
-    elif triggered_input == "draggable":
-        return (
-            current_draggable_children,
-            new_layouts,
-            # selected_year,
-            new_layouts,
-            current_draggable_children,
-            # selected_year,
-        )
-    # elif triggered_input == "edit-dashboard-mode-button":
-    #     # switch_state = True if len(ctx.triggered[0]["value"]) > 0 else False
-    #     print(switch_state)
-    #     # assuming the switch state is added as the first argument in args
-    #     updated_draggable_children = []
-
-    #     for child in current_draggable_children:
-    #         graph = child["props"]["children"][
-    #             -1
-    #         ]  # Assuming graph is always the last child
-    #         print(child["props"]["children"])
-    #         if switch_state:  # If switch is 'on', add the remove button
-    #             remove_button = dbc.Button(
-    #                 "Remove",
-    #                 id={
-    #                     "type": "remove-button",
-    #                     "index": child["props"]["id"],
-    #                 },
-    #                 color="danger",
-    #             )
-    #             edit_button = dbc.Button(
-    #                 "Edit",
-    #                 id={
-    #                     "type": "edit-button",
-    #                     "index": child["props"]["id"],
-    #                 },
-    #                 color="secondary",
-    #                 style={"margin-left": "10px"},
-    #             )
-
-    #             updated_child = html.Div(
-    #                 [remove_button, edit_button, graph],
-    #                 id=child["props"]["id"],
-    #             )
-    #         else:  # If switch is 'off', remove the button
-    #             updated_child = html.Div(
-    #                 [graph],
-    #                 id=child["props"]["id"],
-    #             )
-    #         updated_draggable_children.append(updated_child)
-    #     return (
-    #         updated_draggable_children,
-    #         new_layouts,
-    #         # selected_year,
-    #         new_layouts,
-    #         updated_draggable_children,
-    #         # selected_year,
-    #     )
-
-    # Add an else condition to return the current layout when there's no triggering input
-    else:
-        raise dash.exceptions.PreventUpdate
 
 
 if __name__ == "__main__":
