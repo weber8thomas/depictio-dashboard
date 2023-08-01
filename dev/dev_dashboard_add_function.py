@@ -601,9 +601,10 @@ def add_new_div(n, children, layouts):
                                                 "value": "Figure",
                                             },
                                             n_clicks=0,
-                                            style={"display": "inline-block"},
+                                            style={"display": "inline-block", "width": "250px", "height":"100px"},
                                             size="xl",
                                             color="grape",
+                                            leftIcon=DashIconify(icon="mdi:graph-box"),
                                         )
                                     ),
                                     dbc.Col(
@@ -615,9 +616,12 @@ def add_new_div(n, children, layouts):
                                                 "value": "Card",
                                             },
                                             n_clicks=0,
-                                            style={"display": "inline-block"},
+                                            style={"display": "inline-block", "width": "250px", "height":"100px"},
                                             size="xl",
                                             color="violet",
+                                            leftIcon=DashIconify(
+                                                icon="formkit:number", color="white"
+                                            ),
                                         )
                                     ),
                                     dbc.Col(
@@ -629,9 +633,12 @@ def add_new_div(n, children, layouts):
                                                 "value": "Interactive",
                                             },
                                             n_clicks=0,
-                                            style={"display": "inline-block"},
+                                            style={"display": "inline-block", "width": "250px", "height":"100px"},
                                             size="xl",
                                             color="indigo",
+                                            leftIcon=DashIconify(
+                                                icon="bx:slider-alt", color="white"
+                                            ),
                                         )
                                     ),
                                 ]
@@ -771,6 +778,7 @@ def update_specific_params(n_clicks, visu_type, edit_button_id):
                         "options": list(df.columns),
                         "value": None,
                         "persistence": True,
+                        "style": {"width": "100%"},
                         "id": {
                             "type": f"tmp-{e}",
                             "index": edit_button_id["index"],
@@ -811,8 +819,12 @@ def update_specific_params(n_clicks, visu_type, edit_button_id):
                 #     }
 
                 input_fct_with_params = input_fct(**tmp_options)
+
+                # input_fct_with_params = dmc.Tooltip(
+                #     children=[input_fct(**tmp_options)], label="TEST"
+                # )
                 accordion_item = dbc.AccordionItem(
-                    [dbc.Row(input_fct_with_params)],
+                    [dbc.Row(input_fct_with_params, style={"width": "100%"})],
                     className="my-2",
                     title=e,
                 )
@@ -855,7 +867,7 @@ def update_specific_params(n_clicks, visu_type, edit_button_id):
                             id="accordion-sec-common",
                         ),
                     ],
-                    title="Common parameters",
+                    title="Generic parameters",
                 ),
                 start_collapsed=True,
             )
@@ -947,6 +959,7 @@ def get_values_to_generate_kwargs(*args):
     print("\n")
 
     children = args[0]
+    print(children)
     # visu_type = args[1]
     # print(children)
     existing_kwargs = args[-1]
@@ -1090,7 +1103,7 @@ def update_figure(*args):
         figure = plotly_vizu_dict[visu_type.lower()](df, **dict_kwargs)
         # figure = px.scatter(df, **dict_kwargs)
         # print(figure)
-        figure.update_layout(uirevision=1)
+        # figure.update_layout(uirevision=1)
 
         return figure
     print("\n")
@@ -1119,10 +1132,10 @@ def update_modal(n_clicks, ids):
         if n > 0:
             if id["value"] == "Figure":
                 # plot_func = plotly_vizu_dict[visualization_type]
-                # plot_kwargs = dict(
-                #     x=df.columns[0], y=df.columns[1], color=df.columns[2]
-                # )
-                plot_kwargs = dict()
+                plot_kwargs = dict(
+                    x=df.columns[0], y=df.columns[1], color=df.columns[2]
+                )
+                # plot_kwargs = dict()
 
                 figure = go.Figure()
 
@@ -1193,7 +1206,7 @@ def update_modal(n_clicks, ids):
                         [
                             dbc.Col(
                                 dcc.Graph(
-                                    figure=figure,
+                                    # figure=figure,
                                     id={"type": "graph", "index": id["index"]},
                                     config={"editable": True},
                                 ),
