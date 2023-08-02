@@ -719,10 +719,11 @@ def update_modal(n_clicks, ids):
         if n > 0:
             if id["value"] == "Figure":
                 # plot_func = plotly_vizu_dict[visualization_type]
+                plot_kwargs = dict(x="lifeExp", y="pop", color="continent")
                 # plot_kwargs = dict(
                 #     x=df.columns[0], y=df.columns[1], color=df.columns[2]
                 # )
-                plot_kwargs = dict()
+                # plot_kwargs = dict()
 
                 figure = go.Figure()
 
@@ -1302,6 +1303,9 @@ def find_ids_recursive(dash_component):
 )
 def update_button(n_clicks, children, btn_id):
     print("update_button")
+    children = [children[4]]
+    print(children)
+
     btn_index = btn_id["index"]
     print(n_clicks, btn_id)
     print([sub_e for e in children for sub_e in list(find_ids_recursive(e))])
@@ -1315,9 +1319,9 @@ def update_button(n_clicks, children, btn_id):
     print(box_type)
     # print(f"Found ids: {all_ids}")
 
-    div_index = 4 if box_type == "segmented-control-visu-graph" else 2
+    div_index = 0 if box_type == "graph" else 2
     if box_type:
-        if box_type == "segmented-control-visu-graph":
+        if box_type == "graph":
             child = children[div_index]["props"]["children"][0]["props"][
                 "children"
             ]  # Figure
@@ -1325,7 +1329,7 @@ def update_button(n_clicks, children, btn_id):
                 "updated-" + child["props"]["id"]["type"]
             )  # Figure
 
-            # print(child)
+            print(child)
             print("OK")
         elif box_type == "card":
             # print(children)
@@ -1382,10 +1386,11 @@ def update_button(n_clicks, children, btn_id):
 
         new_draggable_child = html.Div(
             [
-                html.Div([remove_button, edit_button]),
+                remove_button,
+                edit_button,
                 child,
             ],
-            id=f"draggable-{btn_id}",
+            id=f"draggable-{btn_index}",
         )
 
         return new_draggable_child
@@ -1976,54 +1981,154 @@ def update_draggable_children(
             current_draggable_children,
             # selected_year,
         )
-    # elif triggered_input == "edit-dashboard-mode-button":
-    #     # switch_state = True if len(ctx.triggered[0]["value"]) > 0 else False
-    #     print(switch_state)
-    #     # assuming the switch state is added as the first argument in args
-    #     updated_draggable_children = []
 
-    #     for child in current_draggable_children:
-    #         graph = child["props"]["children"][
-    #             -1
-    #         ]  # Assuming graph is always the last child
-    #         print(child["props"]["children"])
-    #         if switch_state:  # If switch is 'on', add the remove button
-    #             remove_button = dbc.Button(
-    #                 "Remove",
-    #                 id={
-    #                     "type": "remove-button",
-    #                     "index": child["props"]["id"],
-    #                 },
-    #                 color="danger",
-    #             )
-    #             edit_button = dbc.Button(
-    #                 "Edit",
-    #                 id={
-    #                     "type": "edit-button",
-    #                     "index": child["props"]["id"],
-    #                 },
-    #                 color="secondary",
-    #                 style={"margin-left": "10px"},
-    #             )
+    # div_index = 4 if box_type == "segmented-control-visu-graph" else 2
+    # if box_type:
+    #     if box_type == "segmented-control-visu-graph":
+    #         child = children[div_index]["props"]["children"][0]["props"][
+    #             "children"
+    #         ]  # Figure
+    #         child["props"]["id"]["type"] = (
+    #             "updated-" + child["props"]["id"]["type"]
+    #         )  # Figure
 
-    #             updated_child = html.Div(
-    #                 [remove_button, edit_button, graph],
-    #                 id=child["props"]["id"],
-    #             )
-    #         else:  # If switch is 'off', remove the button
-    #             updated_child = html.Div(
-    #                 [graph],
-    #                 id=child["props"]["id"],
-    #             )
-    #         updated_draggable_children.append(updated_child)
-    #     return (
-    #         updated_draggable_children,
-    #         new_layouts,
-    #         # selected_year,
-    #         new_layouts,
-    #         updated_draggable_children,
-    #         # selected_year,
-    #     )
+    #         # print(child)
+    #         print("OK")
+    #     elif box_type == "card":
+    #         # print(children)
+    #         child = children[div_index]["props"]["children"][1]["props"]["children"][
+    #             1
+    #         ]  # Card
+    #         print(child)
+    #         child["props"]["children"]["props"]["id"]["type"] = (
+    #             "updated-" + child["props"]["children"]["props"]["id"]["type"]
+    #         )  # Figure
+    #     elif box_type == "input":
+    #         # print(children)
+    #         child = children[div_index]["props"]["children"][1]["props"]["children"][
+    #             1
+    #         ]  # Card
+    #         print(child)
+    #         child["props"]["children"]["props"]["id"]["type"] = (
+    #             "updated-" + child["props"]["children"]["props"]["id"]["type"]
+
+    # edit_button = dmc.Button(
+    #     "Edit",
+    #     id={
+    #         "type": "edit-button",
+    #         "index": f"edit-{btn_index}",
+    #     },
+    #     color="gray",
+    #     variant="filled",
+    #     leftIcon=DashIconify(icon="basil:edit-solid", color="white"),
+    # )
+
+    # remove_button = dmc.Button(
+    #     "Remove",
+    #     id={"type": "remove-button", "index": f"remove-{btn_index}"},
+    #     color="red",
+    #     variant="filled",
+    #     leftIcon=DashIconify(icon="jam:trash", color="white"),
+    # )
+
+    # new_draggable_child = html.Div(
+    #     [
+    #         html.Div([remove_button, edit_button]),
+    #         child,
+    #     ],
+    #     id=f"draggable-{btn_id}",
+    # )
+
+    elif triggered_input == "edit-dashboard-mode-button":
+
+        # switch_state = True if len(ctx.triggered[0]["value"]) > 0 else False
+        print(switch_state)
+        print(current_draggable_children)
+        # assuming the switch state is added as the first argument in args
+        updated_draggable_children = []
+        print(len(current_draggable_children))
+        for child in current_draggable_children:
+            print(len(child))
+            print(child["props"]["id"])
+            # print(len(child["props"]["children"]))
+            # graph = child["props"]["children"][0]["props"]["children"][
+            #     -2
+            # ]  # Assuming graph is always the last child
+            #     graph = child["props"]["children"][0]["props"]["children"][0]["props"]["children"]
+            #     print(child["props"]["children"])
+            if switch_state:  # If switch is 'on', add the remove button
+                # if "graph" in child["props"]["id"]:
+                graph = child["props"]["children"][0]
+
+                edit_button = dmc.Button(
+                    "Edit",
+                    id={
+                        "type": "edit-button",
+                        "index": child["props"]["id"],
+                    },
+                    color="gray",
+                    variant="filled",
+                    leftIcon=DashIconify(icon="basil:edit-solid", color="white"),
+                )
+
+                remove_button = dmc.Button(
+                    "Remove",
+                    id={"type": "remove-button", "index": child["props"]["id"]},
+                    color="red",
+                    variant="filled",
+                    leftIcon=DashIconify(icon="jam:trash", color="white"),
+                )
+
+                updated_child = html.Div(
+                    [
+                        remove_button,
+                        edit_button,
+                        graph,
+                    ],
+                    id=child["props"]["id"],
+                )
+
+                # remove_button = dbc.Button(
+                #     "Remove",
+                #     id={
+                #         "type": "remove-button",
+                #         "index": child["props"]["id"],
+                #     },
+                #     color="danger",
+                # )
+                # edit_button = dbc.Button(
+                #     "Edit",
+                #     id={
+                #         "type": "edit-button",
+                #         "index": child["props"]["id"],
+                #     },
+                #     color="secondary",
+                #     style={"margin-left": "10px"},
+                # )
+
+                # updated_child = html.Div(
+                #     [remove_button, edit_button, graph],
+                #     id=child["props"]["id"],
+                # )
+            else:  # If switch is 'off', remove the button
+                print(child)
+                graph = child["props"]["children"][0]["props"]["children"]["props"][
+                    "children"
+                ][2]
+
+                updated_child = html.Div(
+                    [graph],
+                    id=child["props"]["id"],
+                )
+            updated_draggable_children.append(updated_child)
+        return (
+            updated_draggable_children,
+            new_layouts,
+            # selected_year,
+            new_layouts,
+            updated_draggable_children,
+            # selected_year,
+        )
 
     # Add an else condition to return the current layout when there's no triggering input
     else:
