@@ -10,7 +10,7 @@ import pandas as pd
 import plotly.express as px
 import re
 from dash_iconify import DashIconify
-
+import ast
 
 from config import external_stylesheets
 
@@ -1302,6 +1302,7 @@ def find_ids_recursive(dash_component):
 )
 def update_button(n_clicks, children, btn_id):
     print("update_button")
+    btn_index = btn_id["index"]
     print(n_clicks, btn_id)
     print([sub_e for e in children for sub_e in list(find_ids_recursive(e))])
     print("\n")
@@ -1364,7 +1365,7 @@ def update_button(n_clicks, children, btn_id):
             "Edit",
             id={
                 "type": "edit-button",
-                "index": f"edit-{btn_id}",
+                "index": f"edit-{btn_index}",
             },
             color="gray",
             variant="filled",
@@ -1373,7 +1374,7 @@ def update_button(n_clicks, children, btn_id):
 
         remove_button = dmc.Button(
             "Remove",
-            id={"type": "remove-button", "index": f"remove-{btn_id}"},
+            id={"type": "remove-button", "index": f"remove-{btn_index}"},
             color="red",
             variant="filled",
             leftIcon=DashIconify(icon="jam:trash", color="white"),
@@ -1469,9 +1470,11 @@ def update_draggable_children(
     # print("______________________")
 
     ctx = dash.callback_context
+    ctx_triggered = ctx.triggered
     triggered_input = ctx.triggered[0]["prop_id"].split(".")[0]
     print(triggered_input)
-    print(ctx.triggered)
+    print(f"CTX triggered: {ctx.triggered}")
+    print(f"REMOVE BUTTON ARGS {args[-9]}")
     print("\n")
     stored_layout_data = args[-7]
     stored_children_data = args[-6]
@@ -1527,8 +1530,11 @@ def update_draggable_children(
     #     current_layouts = dict()
 
     if "add-button" in triggered_input:
+        print(ctx.triggered[0])
+        print(ctx.triggered[0]["value"])
         n = ctx.triggered[0]["value"]
         print("add_new_div")
+        print(n)
         # print(app._callback_list)
 
         print("index: {}".format(n))
@@ -1838,126 +1844,128 @@ def update_draggable_children(
 
     # if the remove button was clicked, return an empty list to remove all the plots
 
-    # elif "remove-" in triggered_input:
-    #     print("\nREMOVE")
-    #     print(triggered_input, type(triggered_input))
-    #     input_id = ast.literal_eval(triggered_input)["index"]
+    elif "remove-" in triggered_input and [e for e in args[-9] if e]:
+        print("\nREMOVE")
+        print(triggered_input, type(triggered_input))
+        print(current_draggable_children)
+        input_id = ast.literal_eval(triggered_input)["index"]
+        print(input_id)
 
-    #     new_filter_dict = filter_dict
-    #     print(new_filter_dict)
-    #     for child in current_draggable_children:
-    #         if "-".join(child["props"]["id"].split("-")[1:]) == "-".join(
-    #             input_id.split("-")[1:]
-    #         ):
-    #             current_draggable_children.remove(child)
-    #             input_id = "-".join(input_id.split("-")[2:])
+        # new_filter_dict = filter_dict
+        # print(new_filter_dict)
+        for child in current_draggable_children:
+            if "-".join(child["props"]["id"].split("-")[1:]) == "-".join(
+                input_id.split("-")[1:]
+            ):
+                current_draggable_children.remove(child)
+        #         input_id = "-".join(input_id.split("-")[2:])
 
-    #             # Remove the corresponding entry from filter dictionary
-    #             tmp_input_id = "-".join(input_id.split("-")[1:])
-    #             if "-".join(input_id.split("-")[1:]) in new_filter_dict:
-    #                 del new_filter_dict[tmp_input_id]
-    #             print(new_filter_dict)
+        #         # Remove the corresponding entry from filter dictionary
+        #         tmp_input_id = "-".join(input_id.split("-")[1:])
+        #         if "-".join(input_id.split("-")[1:]) in new_filter_dict:
+        #             del new_filter_dict[tmp_input_id]
+        #         print(new_filter_dict)
 
-    #     updated_draggable_children = []
+        # updated_draggable_children = []
 
-    #     for j, child in enumerate(current_draggable_children):
-    #         if child["props"]["id"].replace("draggable-", "") == input_id:
-    #             updated_draggable_children.append(child)
-    #         elif (
-    #             child["props"]["id"].replace("draggable-", "") != input_id
-    #             and "-input" not in child["props"]["id"]
-    #         ):
-    #             # print(child["props"]["id"]["index"])
-    #             index = -1 if switch_state is True else 0
-    #             graph = child["props"]["children"][index]
-    #             if type(graph["props"]["id"]) is str:
-    #                 print("TEST")
-    #                 # Extract the figure type and its corresponding function
-    #                 figure_type = "-".join(graph["props"]["id"].split("-")[2:])
-    #                 graph_id = graph["props"]["id"]
-    #                 updated_fig = create_initial_figure(
-    #                     df,
-    #                     figure_type,
-    #                     input_id="-".join(input_id.split("-")[2:]),
-    #                     filter=new_filter_dict,
-    #                 )
+        # for j, child in enumerate(current_draggable_children):
+        #     if child["props"]["id"].replace("draggable-", "") == input_id:
+        #         updated_draggable_children.append(child)
+        #     elif (
+        #         child["props"]["id"].replace("draggable-", "") != input_id
+        #         and "-input" not in child["props"]["id"]
+        #     ):
+        #         # print(child["props"]["id"]["index"])
+        #         index = -1 if switch_state is True else 0
+        #         graph = child["props"]["children"][index]
+        #         if type(graph["props"]["id"]) is str:
+        #             print("TEST")
+        #             # Extract the figure type and its corresponding function
+        #             figure_type = "-".join(graph["props"]["id"].split("-")[2:])
+        #             graph_id = graph["props"]["id"]
+        #             updated_fig = create_initial_figure(
+        #                 df,
+        #                 figure_type,
+        #                 input_id="-".join(input_id.split("-")[2:]),
+        #                 filter=new_filter_dict,
+        #             )
 
-    #                 if "-card" in graph_id:
-    #                     graph["props"]["children"] = updated_fig
+        #             if "-card" in graph_id:
+        #                 graph["props"]["children"] = updated_fig
 
-    #                 else:
-    #                     graph["props"]["figure"] = updated_fig
-    #                 rm_button = dbc.Button(
-    #                     "Remove",
-    #                     id={
-    #                         "type": "remove-button",
-    #                         "index": child["props"]["id"],
-    #                     },
-    #                     color="danger",
-    #                 )
-    #                 edit_button = dbc.Button(
-    #                     "Edit",
-    #                     id={
-    #                         "type": "edit-button",
-    #                         "index": child["props"]["id"],
-    #                     },
-    #                     color="secondary",
-    #                     style={"margin-left": "10px"},
-    #                 )
-    #                 children = (
-    #                     [rm_button, edit_button, graph]
-    #                     if switch_state is True
-    #                     else [graph]
-    #                 )
-    #                 updated_child = html.Div(
-    #                     children=children,
-    #                     id=child["props"]["id"],
-    #                 )
+        #             else:
+        #                 graph["props"]["figure"] = updated_fig
+        #             rm_button = dbc.Button(
+        #                 "Remove",
+        #                 id={
+        #                     "type": "remove-button",
+        #                     "index": child["props"]["id"],
+        #                 },
+        #                 color="danger",
+        #             )
+        #             edit_button = dbc.Button(
+        #                 "Edit",
+        #                 id={
+        #                     "type": "edit-button",
+        #                     "index": child["props"]["id"],
+        #                 },
+        #                 color="secondary",
+        #                 style={"margin-left": "10px"},
+        #             )
+        #             children = (
+        #                 [rm_button, edit_button, graph]
+        #                 if switch_state is True
+        #                 else [graph]
+        #             )
+        #             updated_child = html.Div(
+        #                 children=children,
+        #                 id=child["props"]["id"],
+        #             )
 
-    #                 updated_draggable_children.append(updated_child)
+        #             updated_draggable_children.append(updated_child)
+        #     else:
+        #         updated_draggable_children.append(child)
+
+        return (
+            current_draggable_children,
+            new_layouts,
+            # selected_year,
+            new_layouts,
+            current_draggable_children,
+            # selected_year,
+        )
+        # return (
+        #     updated_draggable_children,
+        #     current_layouts,
+        #     current_layouts,
+        #     updated_draggable_children,
+        # )
+
+    # elif triggered_input == "stored-layout" or triggered_input == "stored-children":
+    #     if stored_layout_data and stored_children_data:
+    #         return (
+    #             stored_children_data,
+    #             stored_layout_data,
+    #             stored_layout_data,
+    #             stored_children_data,
+    #         )
+    #     else:
+    #         # Load data from the file if it exists
+    #         loaded_data = load_data()
+    #         if loaded_data:
+    #             return (
+    #                 loaded_data["stored_children_data"],
+    #                 loaded_data["stored_layout_data"],
+    #                 loaded_data["stored_layout_data"],
+    #                 loaded_data["stored_children_data"],
+    #             )
     #         else:
-    #             updated_draggable_children.append(child)
-
-    #     # return (
-    #     #     current_draggable_children,
-    #     #     new_layouts,
-    #     #     # selected_year,
-    #     #     new_layouts,
-    #     #     current_draggable_children,
-    #     #     # selected_year,
-    #     # )
-    #     return (
-    #         updated_draggable_children,
-    #         current_layouts,
-    #         current_layouts,
-    #         updated_draggable_children,
-    #     )
-
-    elif triggered_input == "stored-layout" or triggered_input == "stored-children":
-        if stored_layout_data and stored_children_data:
-            return (
-                stored_children_data,
-                stored_layout_data,
-                stored_layout_data,
-                stored_children_data,
-            )
-        else:
-            # Load data from the file if it exists
-            loaded_data = load_data()
-            if loaded_data:
-                return (
-                    loaded_data["stored_children_data"],
-                    loaded_data["stored_layout_data"],
-                    loaded_data["stored_layout_data"],
-                    loaded_data["stored_children_data"],
-                )
-            else:
-                return (
-                    current_draggable_children,
-                    {},
-                    stored_layout,
-                    stored_figures,
-                )
+    #             return (
+    #                 current_draggable_children,
+    #                 {},
+    #                 stored_layout,
+    #                 stored_figures,
+    #             )
 
     elif triggered_input == "draggable":
         return (
