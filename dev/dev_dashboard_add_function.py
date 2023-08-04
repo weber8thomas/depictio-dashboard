@@ -92,6 +92,11 @@ header = html.Div(
             value=[0],
             switch=True,
         ),
+        dcc.Store(
+            id="stored-edit-dashboard-mode-button",
+            storage_type="memory",
+            data={"count": 0},
+        ),
     ],
 )
 
@@ -1303,13 +1308,13 @@ def find_ids_recursive(dash_component):
 )
 def update_button(n_clicks, children, btn_id):
     print("update_button")
-    children = [children[4]]
-    print(children)
+    # children = [children[4]]
+    # print(children)
 
     btn_index = btn_id["index"]
-    print(n_clicks, btn_id)
-    print([sub_e for e in children for sub_e in list(find_ids_recursive(e))])
-    print("\n")
+    # print(n_clicks, btn_id)
+    # print([sub_e for e in children for sub_e in list(find_ids_recursive(e))])
+    # print("\n")
 
     # print(f"Inspecting children:")
     box_type = [sub_e for e in children for sub_e in list(find_ids_recursive(e))][0][
@@ -1319,9 +1324,10 @@ def update_button(n_clicks, children, btn_id):
     print(box_type)
     # print(f"Found ids: {all_ids}")
 
-    div_index = 0 if box_type == "graph" else 2
+    div_index = 0 if box_type == "segmented-control-visu-graph" else 2
     if box_type:
-        if box_type == "graph":
+        if box_type == "segmented-control-visu-graph":
+            children = [children[4]]
             child = children[div_index]["props"]["children"][0]["props"][
                 "children"
             ]  # Figure
@@ -1329,7 +1335,7 @@ def update_button(n_clicks, children, btn_id):
                 "updated-" + child["props"]["id"]["type"]
             )  # Figure
 
-            print(child)
+            # print(child)
             print("OK")
         elif box_type == "card":
             # print(children)
@@ -1441,6 +1447,7 @@ def freeze_layout(value):
         Output("draggable", "layouts"),
         Output("stored-layout", "data"),
         Output("stored-children", "data"),
+        Output("stored-edit-dashboard-mode-button", "data")
     ],
     # [
     #     Input(f"add-plot-button-{plot_type.lower().replace(' ', '-')}", "n_clicks")
@@ -1462,8 +1469,9 @@ def freeze_layout(value):
         State("draggable", "layouts"),
         State("stored-layout", "data"),
         State("stored-children", "data"),
+        State("stored-edit-dashboard-mode-button", "data"),
     ],
-    # prevent_initial_call=True,
+    prevent_initial_call=True,
 )
 def update_draggable_children(
     # n_clicks, selected_year, current_draggable_children, current_layouts, stored_figures
@@ -1479,23 +1487,28 @@ def update_draggable_children(
     triggered_input = ctx.triggered[0]["prop_id"].split(".")[0]
     print(triggered_input)
     print(f"CTX triggered: {ctx.triggered}")
-    print(f"REMOVE BUTTON ARGS {args[-9]}")
+    print(f"REMOVE BUTTON ARGS {args[-10]}")
     print("\n")
-    stored_layout_data = args[-7]
-    stored_children_data = args[-6]
-    new_layouts = args[-5]
+    stored_layout_data = args[-8]
+    stored_children_data = args[-7]
+    new_layouts = args[-6]
     # print(args[-10])
-    switch_state = True if len(args[-10]) > 0 else False
+
+
+    # remove-button -7
+    # selected_year = args[-6]
+
+    current_draggable_children = args[-5]
+    current_layouts = args[-4]
+    stored_layout = args[-3]
+    stored_figures = args[-2]
+    stored_edit_dashboard = args[-1]
+
+
+    switch_state = True if len(args[-11]) > 0 else False
     switch_state_index = -1 if switch_state is True else -1
     print(f"Switch state: {switch_state}")
-
-    # remove-button -6
-    # selected_year = args[-5]
-
-    current_draggable_children = args[-4]
-    current_layouts = args[-3]
-    stored_layout = args[-2]
-    stored_figures = args[-1]
+    print(f"Switch state value: {stored_edit_dashboard}")
 
     filter_dict = {}
 
@@ -1669,6 +1682,7 @@ def update_draggable_children(
             current_layouts,
             current_layouts,
             current_draggable_children,
+            stored_edit_dashboard
         )
 
     #     return (
@@ -1849,16 +1863,18 @@ def update_draggable_children(
 
     # if the remove button was clicked, return an empty list to remove all the plots
 
-    elif "remove-" in triggered_input and [e for e in args[-9] if e]:
+    elif "remove-" in triggered_input and [e for e in args[-10] if e]:
         print("\nREMOVE")
         print(triggered_input, type(triggered_input))
-        print(current_draggable_children)
+        # print(current_draggable_children)
         input_id = ast.literal_eval(triggered_input)["index"]
         print(input_id)
 
         # new_filter_dict = filter_dict
         # print(new_filter_dict)
         for child in current_draggable_children:
+            print("-".join(child["props"]["id"].split("-")[1:]))
+            print("-".join(input_id.split("-")[1:]))
             if "-".join(child["props"]["id"].split("-")[1:]) == "-".join(
                 input_id.split("-")[1:]
             ):
@@ -1937,6 +1953,7 @@ def update_draggable_children(
             # selected_year,
             new_layouts,
             current_draggable_children,
+            stored_edit_dashboard
             # selected_year,
         )
         # return (
@@ -1979,6 +1996,7 @@ def update_draggable_children(
             # selected_year,
             new_layouts,
             current_draggable_children,
+            stored_edit_dashboard
             # selected_year,
         )
 
@@ -2040,10 +2058,12 @@ def update_draggable_children(
     # )
 
     elif triggered_input == "edit-dashboard-mode-button":
+        stored_edit_dashboard["count"] = stored_edit_dashboard["count"] + 1 if switch_state else stored_edit_dashboard["count"]
 
         # switch_state = True if len(ctx.triggered[0]["value"]) > 0 else False
         print(switch_state)
-        print(current_draggable_children)
+        print(stored_edit_dashboard)
+        # print(current_draggable_children)
         # assuming the switch state is added as the first argument in args
         updated_draggable_children = []
         print(len(current_draggable_children))
@@ -2059,6 +2079,7 @@ def update_draggable_children(
             if switch_state:  # If switch is 'on', add the remove button
                 # if "graph" in child["props"]["id"]:
                 graph = child["props"]["children"][0]
+                print(graph["props"]["id"])
 
                 edit_button = dmc.Button(
                     "Edit",
@@ -2110,27 +2131,38 @@ def update_draggable_children(
                 #     [remove_button, edit_button, graph],
                 #     id=child["props"]["id"],
                 # )
-            else:  # If switch is 'off', remove the button
-                print(child)
+            elif switch_state is False and stored_edit_dashboard["count"] == 0:  # If switch is 'off', remove the button
                 graph = child["props"]["children"][0]["props"]["children"]["props"][
                     "children"
                 ][2]
+                print(graph["props"]["id"])
+
 
                 updated_child = html.Div(
                     [graph],
                     id=child["props"]["id"],
                 )
-            updated_draggable_children.append(updated_child)
+            else:
+                graph = child["props"]["children"][-1]
+                print(child["props"]["id"])
+
+                updated_child = html.Div(
+                    [graph],
+                    id=child["props"]["id"],
+                )
+        updated_draggable_children.append(updated_child)
+
         return (
             updated_draggable_children,
             new_layouts,
             # selected_year,
             new_layouts,
             updated_draggable_children,
+            stored_edit_dashboard
             # selected_year,
         )
 
-    # Add an else condition to return the current layout when there's no triggering input
+    # # Add an else condition to return the current layout when there's no triggering input
     else:
         raise dash.exceptions.PreventUpdate
 
