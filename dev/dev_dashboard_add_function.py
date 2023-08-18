@@ -293,10 +293,10 @@ def close_modal(n_clicks):
     # prevent_initial_call=True,
 )
 def update_specific_params(n_clicks, visu_type, edit_button_id):
-    print("update_specific_params")
+    # print("update_specific_params")
     # print(app._callback_list)
 
-    print(n_clicks, edit_button_id)
+    # print(n_clicks, edit_button_id)
 
     value = visu_type.lower()
     # value = "scatter"
@@ -529,7 +529,7 @@ def generate_dropdown_ids(value):
     prevent_initial_call=True,
 )
 def toggle_collapse(n, is_open):
-    print(n, is_open, n % 2 == 0)
+    # print(n, is_open, n % 2 == 0)
     if n % 2 == 0:
         return False
     else:
@@ -546,7 +546,7 @@ def toggle_collapse(n, is_open):
     # prevent_initial_call=True,
 )
 def get_values_to_generate_kwargs(*args):
-    print("get_values_to_generate_kwargs")
+    # print("get_values_to_generate_kwargs")
     # print(args)
     # print("\n")
 
@@ -572,7 +572,7 @@ def get_values_to_generate_kwargs(*args):
 
         # accordion_secondary_common_params = children[1]["props"]["children"]
         if accordion_primary_common_params:
-            print("TOTO")
+            # print("TOTO")
             accordion_primary_common_params = [
                 param["props"]["children"][0]["props"]["children"]
                 for param in accordion_primary_common_params
@@ -594,7 +594,7 @@ def get_values_to_generate_kwargs(*args):
 
         # accordion_secondary_common_params = children[1]["props"]["children"]
         if accordion_secondary_common_params:
-            print("TOTO")
+            # print("TOTO")
             accordion_secondary_common_params = [
                 param["props"]["children"][0]["props"]["children"]
                 for param in accordion_secondary_common_params
@@ -623,7 +623,7 @@ def get_values_to_generate_kwargs(*args):
 
         # accordion_secondary_common_params = children[1]["props"]["children"]
         if specific_params:
-            print("specific_params")
+            # print("specific_params")
             specific_params = [
                 param["props"]["children"][0]["props"]["children"]
                 for param in specific_params
@@ -683,9 +683,9 @@ def get_values_to_generate_kwargs(*args):
 def update_figure(*args):
     dict_kwargs = args[0]
     visu_type = args[1]
-    print("update figure")
-    print(dict_kwargs)
-    print(visu_type)
+    # print("update figure")
+    # print(dict_kwargs)
+    # print(visu_type)
     # # print(app._callback_list)
 
     # print(dict_kwargs)
@@ -712,15 +712,15 @@ def update_figure(*args):
     prevent_initial_call=True,
 )
 def update_modal(n_clicks, ids):
-    print("update_modal")
-    print(n_clicks, ids)
-    print("\n")
+    # print("update_modal")
+    # print(n_clicks, ids)
+    # print("\n")
 
     import plotly.graph_objects as go
 
     # visualization_type = "scatter"
     for n, id in zip(n_clicks, ids):
-        print(n, id)
+        # print(n, id)
         if n > 0:
             if id["value"] == "Figure":
                 # plot_func = plotly_vizu_dict[visualization_type]
@@ -851,7 +851,7 @@ def update_modal(n_clicks, ids):
                     ),
                 ]
             elif id["value"] == "Card":
-                print("Card")
+                # print("Card")
                 return [
                     dbc.Row(
                         [
@@ -920,7 +920,7 @@ def update_modal(n_clicks, ids):
                                                 ),
                                                 html.Div(
                                                     id={
-                                                        "type": "debug-print",
+                                                        # "type": "debug-print",
                                                         "index": id["index"],
                                                     },
                                                 ),
@@ -963,7 +963,7 @@ def update_modal(n_clicks, ids):
                     ),
                 ]
             elif id["value"] == "Interactive":
-                print("Interactive")
+                # print("Interactive")
                 return [
                     dbc.Row(
                         [
@@ -1083,7 +1083,7 @@ def update_aggregation_options(column_value):
 
     # Get the type of the selected column
     column_type = df[column_value].dtype
-    print(column_value, column_type, type(column_type))
+    # print(column_value, column_type, type(column_type))
 
     if column_type in ["object", "category"]:
         nb_unique = df[column_value].nunique()
@@ -1092,11 +1092,11 @@ def update_aggregation_options(column_value):
 
     # Get the aggregation functions available for the selected column type
     agg_functions_tmp_methods = agg_functions[str(column_type)]["input_methods"]
-    print(agg_functions_tmp_methods)
+    # print(agg_functions_tmp_methods)
 
     # Create a list of options for the dropdown
     options = [{"label": k, "value": k} for k in agg_functions_tmp_methods.keys()]
-    print(options)
+    # print(options)
 
     if nb_unique > 5:
         options = [e for e in options if e["label"] != "SegmentedControl"]
@@ -1136,7 +1136,7 @@ def update_card_body(input_value, column_value, aggregation_value):
     func_name = agg_functions[column_type]["input_methods"][aggregation_value][
         "component"
     ]
-    print(func_name)
+    # print(func_name)
 
     # if callable(func_name):
     #     # If the function is a lambda function
@@ -1164,7 +1164,7 @@ def update_card_body(input_value, column_value, aggregation_value):
         data = df[column_value].unique()
 
         new_card_body = [card_title, func_name(data=data)]
-        print(new_card_body)
+        # print(new_card_body)
 
         return new_card_body
     elif aggregation_value in ["TextInput"]:
@@ -1172,7 +1172,7 @@ def update_card_body(input_value, column_value, aggregation_value):
             card_title,
             func_name(placeholder="Your selected value"),
         ]
-        print(new_card_body)
+        # print(new_card_body)
 
         return new_card_body
 
@@ -1189,7 +1189,7 @@ def update_card_body(input_value, column_value, aggregation_value):
             kwargs = dict(marks=marks, step=step, included=included)
 
         new_card_body = [card_title, func_name(min=min_value, max=max_value, **kwargs)]
-        print(new_card_body)
+        # print(new_card_body)
         return new_card_body
 
 
@@ -1205,15 +1205,15 @@ def update_aggregation_options(column_value):
 
     # Get the type of the selected column
     column_type = df[column_value].dtype
-    print(column_value, column_type, type(column_type))
+    # print(column_value, column_type, type(column_type))
 
     # Get the aggregation functions available for the selected column type
     agg_functions_tmp_methods = agg_functions[str(column_type)]["card_methods"]
-    print(agg_functions_tmp_methods)
+    # print(agg_functions_tmp_methods)
 
     # Create a list of options for the dropdown
     options = [{"label": k, "value": k} for k in agg_functions_tmp_methods.keys()]
-    print(options)
+    # print(options)
 
     return options
 
@@ -1255,7 +1255,7 @@ def update_card_body(input_value, column_value, aggregation_value):
     else:
         # If the function is a pandas function
         v = getattr(df[column_value], func_name)()
-        print(v, type(v))
+        # print(v, type(v))
         if type(v) is pd.core.series.Series and func_name != "mode":
             v = v.iloc[0]
         elif type(v) is pd.core.series.Series and func_name == "mode":
@@ -1307,7 +1307,7 @@ def find_ids_recursive(dash_component):
     # prevent_initial_call=True,
 )
 def update_button(n_clicks, children, btn_id):
-    print("update_button")
+    # print("update_button")
     # children = [children[4]]
     # print(children)
 
@@ -1321,7 +1321,7 @@ def update_button(n_clicks, children, btn_id):
         "type"
     ]
     # print(children)
-    print(box_type)
+    # print(box_type)
     # print(f"Found ids: {all_ids}")
 
     div_index = 0 if box_type == "segmented-control-visu-graph" else 2
@@ -1336,13 +1336,13 @@ def update_button(n_clicks, children, btn_id):
             )  # Figure
 
             # print(child)
-            print("OK")
+            # print("OK")
         elif box_type == "card":
             # print(children)
             child = children[div_index]["props"]["children"][1]["props"]["children"][
                 1
             ]  # Card
-            print(child)
+            # print(child)
             child["props"]["children"]["props"]["id"]["type"] = (
                 "updated-" + child["props"]["children"]["props"]["id"]["type"]
             )  # Figure
@@ -1351,7 +1351,7 @@ def update_button(n_clicks, children, btn_id):
             child = children[div_index]["props"]["children"][1]["props"]["children"][
                 1
             ]  # Card
-            print(child)
+            # print(child)
             child["props"]["children"]["props"]["id"]["type"] = (
                 "updated-" + child["props"]["children"]["props"]["id"]["type"]
             )  # Figure
@@ -1429,16 +1429,20 @@ def update_button(n_clicks, children, btn_id):
 
 # Add a callback to update the isDraggable property
 @app.callback(
-    [Output("draggable", "isDraggable"), Output("draggable", "isResizable")],
+    [
+        Output("draggable", "isDraggable"),
+        Output("draggable", "isResizable"),
+        Output("add-button", "disabled"),
+    ],
     [Input("edit-dashboard-mode-button", "value")],
 )
 def freeze_layout(value):
     # switch based on button's value
     switch_state = True if len(value) > 0 else False
     if switch_state is False:
-        return False, False
+        return False, False, True
     else:
-        return True, True
+        return True, True, False
 
 
 @app.callback(
@@ -1447,7 +1451,7 @@ def freeze_layout(value):
         Output("draggable", "layouts"),
         Output("stored-layout", "data"),
         Output("stored-children", "data"),
-        Output("stored-edit-dashboard-mode-button", "data")
+        Output("stored-edit-dashboard-mode-button", "data"),
     ],
     # [
     #     Input(f"add-plot-button-{plot_type.lower().replace(' ', '-')}", "n_clicks")
@@ -1481,19 +1485,35 @@ def update_draggable_children(
     #     print("\n")
     #     print(arg)
     # print("______________________")
-
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
     ctx = dash.callback_context
     ctx_triggered = ctx.triggered
+    print(f"CTX triggered: {ctx.triggered}")
+
     triggered_input = ctx.triggered[0]["prop_id"].split(".")[0]
     print(triggered_input)
-    print(f"CTX triggered: {ctx.triggered}")
     print(f"REMOVE BUTTON ARGS {args[-10]}")
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
+    print("\n")
     print("\n")
     stored_layout_data = args[-8]
     stored_children_data = args[-7]
     new_layouts = args[-6]
     # print(args[-10])
-
 
     # remove-button -7
     # selected_year = args[-6]
@@ -1504,11 +1524,10 @@ def update_draggable_children(
     stored_figures = args[-2]
     stored_edit_dashboard = args[-1]
 
-
     switch_state = True if len(args[-11]) > 0 else False
     switch_state_index = -1 if switch_state is True else -1
-    print(f"Switch state: {switch_state}")
-    print(f"Switch state value: {stored_edit_dashboard}")
+    # print(f"Switch state: {switch_state}")
+    # print(f"Switch state value: {stored_edit_dashboard}")
 
     filter_dict = {}
 
@@ -1548,16 +1567,16 @@ def update_draggable_children(
     #     current_layouts = dict()
 
     if "add-button" in triggered_input:
-        print(ctx.triggered[0])
-        print(ctx.triggered[0]["value"])
+        # print(ctx.triggered[0])
+        # print(ctx.triggered[0]["value"])
         n = ctx.triggered[0]["value"]
-        print("add_new_div")
-        print(n)
+        # print("add_new_div")
+        # print(n)
         # print(app._callback_list)
 
-        print("index: {}".format(n))
+        # print("index: {}".format(n))
         new_plot_id = f"graph-{n}"
-        print(new_plot_id)
+        # print(new_plot_id)
 
         new_element = html.Div(
             [
@@ -1682,7 +1701,7 @@ def update_draggable_children(
             current_layouts,
             current_layouts,
             current_draggable_children,
-            stored_edit_dashboard
+            stored_edit_dashboard,
         )
 
     #     return (
@@ -1868,13 +1887,13 @@ def update_draggable_children(
         print(triggered_input, type(triggered_input))
         # print(current_draggable_children)
         input_id = ast.literal_eval(triggered_input)["index"]
-        print(input_id)
+        # print(input_id)
 
         # new_filter_dict = filter_dict
         # print(new_filter_dict)
         for child in current_draggable_children:
-            print("-".join(child["props"]["id"].split("-")[1:]))
-            print("-".join(input_id.split("-")[1:]))
+            # print("-".join(child["props"]["id"].split("-")[1:]))
+            # print("-".join(input_id.split("-")[1:]))
             if "-".join(child["props"]["id"].split("-")[1:]) == "-".join(
                 input_id.split("-")[1:]
             ):
@@ -2058,18 +2077,28 @@ def update_draggable_children(
     # )
 
     elif triggered_input == "edit-dashboard-mode-button":
-        stored_edit_dashboard["count"] = stored_edit_dashboard["count"] + 1 if switch_state else stored_edit_dashboard["count"]
+        # print("\n\n")
+        stored_edit_dashboard["count"] = (
+            stored_edit_dashboard["count"] + 1
+            if switch_state
+            else stored_edit_dashboard["count"]
+        )
 
         # switch_state = True if len(ctx.triggered[0]["value"]) > 0 else False
-        print(switch_state)
-        print(stored_edit_dashboard)
+        # print(switch_state)
+        # print(stored_edit_dashboard)
         # print(current_draggable_children)
         # assuming the switch state is added as the first argument in args
         updated_draggable_children = []
-        print(len(current_draggable_children))
+        # print(len(current_draggable_children))
         for child in current_draggable_children:
-            print(len(child))
-            print(child["props"]["id"])
+            print("\n\n")
+            print(child)
+            print("\n\n")
+
+
+            # print(len(child))
+            # print(child["props"]["id"])
             # print(len(child["props"]["children"]))
             # graph = child["props"]["children"][0]["props"]["children"][
             #     -2
@@ -2079,7 +2108,7 @@ def update_draggable_children(
             if switch_state:  # If switch is 'on', add the remove button
                 # if "graph" in child["props"]["id"]:
                 graph = child["props"]["children"][0]
-                print(graph["props"]["id"])
+                # print(graph["props"]["id"])
 
                 edit_button = dmc.Button(
                     "Edit",
@@ -2131,12 +2160,13 @@ def update_draggable_children(
                 #     [remove_button, edit_button, graph],
                 #     id=child["props"]["id"],
                 # )
-            elif switch_state is False and stored_edit_dashboard["count"] == 0:  # If switch is 'off', remove the button
+            elif (
+                switch_state is False and stored_edit_dashboard["count"] == 0
+            ):  # If switch is 'off', remove the button
                 graph = child["props"]["children"][0]["props"]["children"]["props"][
                     "children"
                 ][2]
-                print(graph["props"]["id"])
-
+                # print(graph["props"]["id"])
 
                 updated_child = html.Div(
                     [graph],
@@ -2144,7 +2174,7 @@ def update_draggable_children(
                 )
             else:
                 graph = child["props"]["children"][-1]
-                print(child["props"]["id"])
+                # print(child["props"]["id"])
 
                 updated_child = html.Div(
                     [graph],
