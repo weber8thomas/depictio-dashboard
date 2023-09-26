@@ -1792,4 +1792,4 @@ def update_button(n_clicks, children, btn_id):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port="5080")
+    app.run_server(debug=True, port="5082")
